@@ -64,12 +64,29 @@ function updateMonitoringStats(stats) {
 
 async function loadActivityStream() {
     try {
-        // Call Splunk/FTD API for activity logs
-        const phoneFilter = selectedChild !== 'all' ? `&phone=${selectedChild}` : '';
-        const response = await fetch(`${API_CONFIG.ANALYTICS_API}/activity?limit=20${phoneFilter}`);
+        // Fetch REAL traffic logs from Lambda API
+        const response = await fetch(`${API_CONFIG.MOBSF_INTEGRATION}/traffic/logs`);
 
         if (response.ok) {
-            const activities = await response.json();
+            const data = await response.json();
+            const logs = data.logs || [];
+
+            // Filter by phone if selected
+            const filteredLogs = selectedChild !== 'all'
+                ? logs.filter(log => log.phoneNumber === selectedChild)
+                : logs;
+
+            // Convert to activity format
+            const activities = filteredLogs.map(log => ({
+                type: log.action === 'BLOCKED' ? 'blocked' : 'connection',
+                child: log.phoneNumber,
+                description: `${log.action === 'BLOCKED' ? 'Blocked' : 'Accessed'} ${log.destDomain} (${log.category})`,
+                timestamp: new Date(log.timestamp).toISOString(),
+                risk: log.risk,
+                domain: log.destDomain,
+                logId: log.logId
+            }));
+
             renderActivityStream(activities);
         } else {
             renderActivityStream(await getRecentActivity());
