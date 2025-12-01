@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Children Management - Subscriber Security AI</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <!-- Navigation Header -->
+    <header class="nav-header">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <span class="logo-icon">🛡️</span>
+                <span>Subscriber Security AI</span>
+            </div>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-link">Dashboard</a>
+                <a href="children.html" class="nav-link active">Children</a>
+                <a href="app-scanning.html" class="nav-link">App Security</a>
+                <a href="monitoring.html" class="nav-link">Monitoring</a>
+                <a href="analytics.html" class="nav-link">Analytics</a>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>👥 Children Management</h1>
+            <p>Manage your children's profiles and device settings</p>
+        </div>
+
+        <!-- Add Child Button -->
+        <div class="action-bar">
+            <button class="btn" onclick="toggleAddChildForm()">+ Add New Child</button>
+        </div>
+
+        <!-- Add Child Form -->
+        <div class="form-card" id="addChildForm" style="display: none;">
+            <h2>Add New Child</h2>
+            <form id="newChildForm" onsubmit="addChild(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="childName">Child's Name *</label>
+                        <input type="text" id="childName" placeholder="Enter full name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="childAge">Age *</label>
+                        <input type="number" id="childAge" placeholder="Age" min="1" max="18" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="childPhone">Phone Number *</label>
+                        <input type="tel" id="childPhone" placeholder="+1 (555) 123-4567" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="childDevice">Device Type</label>
+                        <select id="childDevice">
+                            <option value="Android">Android</option>
+                            <option value="iOS">iOS</option>
+                            <option value="Both">Both</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn">Add Child</button>
+                    <button type="button" class="btn-secondary" onclick="toggleAddChildForm()">Cancel</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Children List -->
+        <div id="childrenList" class="children-grid">
+            <!-- Children will be loaded here dynamically -->
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="scripts/api.js"></script>
+    <script src="scripts/children.js"></script>
+</body>
+</html>

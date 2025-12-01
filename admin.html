@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Console - Subscriber Security AI</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <!-- Navigation Header -->
+    <header class="nav-header">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <span class="logo-icon">🛡️</span>
+                <span>Subscriber Security AI - Admin Console</span>
+            </div>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-link">Dashboard</a>
+                <a href="admin.html" class="nav-link active">Admin</a>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>⚙️ Admin Console</h1>
+            <p>System control and configuration</p>
+        </div>
+
+        <!-- Service Status -->
+        <div class="section-card">
+            <h2>🔌 Service Status</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                <div class="service-status-card" id="pgwStatus">
+                    <h3>P-Gateway Simulator</h3>
+                    <div class="status-indicator">
+                        <span class="status-dot" id="pgwDot"></span>
+                        <span id="pgwStatusText">Unknown</span>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                        <button class="btn-small" onclick="startPGatewaySimulator()">▶️ Start</button>
+                        <button class="btn-small btn-secondary" onclick="stopPGatewaySimulator()">⏸️ Stop</button>
+                    </div>
+                </div>
+
+                <div class="service-status-card" id="mobsfStatus">
+                    <h3>MobSF Server</h3>
+                    <div class="status-indicator">
+                        <span class="status-dot" id="mobsfDot"></span>
+                        <span id="mobsfStatusText">Unknown</span>
+                    </div>
+                    <button class="btn-small" onclick="checkMobSFStatus()">🔄 Refresh</button>
+                </div>
+
+                <div class="service-status-card" id="ftdStatus">
+                    <h3>FTD Integration</h3>
+                    <div class="status-indicator">
+                        <span class="status-dot" id="ftdDot"></span>
+                        <span id="ftdStatusText">Unknown</span>
+                    </div>
+                    <button class="btn-small" onclick="checkFTDStatus()">🔄 Refresh</button>
+                </div>
+
+                <div class="service-status-card" id="analyticsStatus">
+                    <h3>Analytics Dashboard</h3>
+                    <div class="status-indicator">
+                        <span class="status-dot" id="analyticsDot"></span>
+                        <span id="analyticsStatusText">Unknown</span>
+                    </div>
+                    <button class="btn-small" onclick="checkAnalyticsStatus()">🔄 Refresh</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- P-Gateway Simulator Controls -->
+        <div class="section-card">
+            <h2>🚀 P-Gateway Simulator Configuration</h2>
+            <p style="color: #888; margin-bottom: 1rem;">Configure traffic simulation parameters</p>
+
+            <div class="form-card" style="border-color: #00aaff;">
+                <form id="simulatorConfig" onsubmit="updateSimulatorConfig(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="subscriberCount">Number of Subscribers</label>
+                            <input type="number" id="subscriberCount" value="100" min="1" max="1000">
+                        </div>
+                        <div class="form-group">
+                            <label for="trafficRate">Traffic Rate (requests/sec)</label>
+                            <input type="number" id="trafficRate" value="10" min="1" max="100">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="apkDownloadChance">APK Download Probability (%)</label>
+                            <input type="number" id="apkDownloadChance" value="5" min="0" max="100">
+                        </div>
+                        <div class="form-group">
+                            <label for="ipaDownloadChance">IPA Download Probability (%)</label>
+                            <input type="number" id="ipaDownloadChance" value="5" min="0" max="100">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="maliciousTrafficChance">Malicious Traffic Probability (%)</label>
+                        <input type="number" id="maliciousTrafficChance" value="2" min="0" max="50">
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn">💾 Save Configuration</button>
+                        <button type="button" class="btn btn-secondary" onclick="resetSimulatorConfig()">🔄 Reset to Defaults</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Manual Scan Trigger -->
+        <div class="section-card">
+            <h2>🔍 Manual Scan Trigger</h2>
+            <p style="color: #888; margin-bottom: 1rem;">Manually trigger a scan of APK/IPA file</p>
+
+            <div class="form-card" style="border-color: #00ff88;">
+                <form id="manualScanForm" onsubmit="triggerManualScan(event)">
+                    <div class="form-group">
+                        <label for="scanFileUrl">File URL (APK or IPA)</label>
+                        <input type="url" id="scanFileUrl" placeholder="https://example.com/app.apk" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="scanFileName">File Name</label>
+                            <input type="text" id="scanFileName" placeholder="app.apk" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="scanPhoneNumber">Phone Number (optional)</label>
+                            <input type="tel" id="scanPhoneNumber" placeholder="+1 (555) 123-4567">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn">🚀 Trigger Scan</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- System Logs -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2>📋 Recent System Logs</h2>
+                <button class="btn-small" onclick="refreshSystemLogs()">🔄 Refresh</button>
+            </div>
+            <div id="systemLogs" style="background: #000; padding: 1rem; border-radius: 10px; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 0.85rem;">
+                <div style="color: #00ff88;">System logs will appear here...</div>
+            </div>
+        </div>
+
+        <!-- Database Stats -->
+        <div class="section-card">
+            <h2>💾 Database Statistics</h2>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <h4>Total Scans</h4>
+                    <p class="summary-value" id="dbTotalScans">0</p>
+                </div>
+                <div class="summary-item">
+                    <h4>Active Subscribers</h4>
+                    <p class="summary-value" id="dbActiveSubscribers">0</p>
+                </div>
+                <div class="summary-item">
+                    <h4>Alerts Generated</h4>
+                    <p class="summary-value" id="dbTotalAlerts">0</p>
+                </div>
+                <div class="summary-item">
+                    <h4>Storage Used</h4>
+                    <p class="summary-value" id="dbStorageUsed">0 MB</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="scripts/api.js"></script>
+    <script src="scripts/admin.js"></script>
+
+    <style>
+        .service-status-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid #333;
+            border-radius: 15px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .service-status-card:hover {
+            border-color: #00ff88;
+        }
+
+        .service-status-card h3 {
+            color: #fff;
+            margin-bottom: 1rem;
+        }
+
+        .service-status-card.active {
+            border-color: #00ff88;
+            background: rgba(0, 255, 136, 0.05);
+        }
+
+        .service-status-card.inactive {
+            border-color: #ff4444;
+            background: rgba(255, 68, 68, 0.05);
+        }
+    </style>
+</body>
+</html>

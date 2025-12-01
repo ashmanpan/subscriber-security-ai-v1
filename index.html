@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subscriber Security AI - Cisco Family Safety</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <!-- Navigation Header -->
+    <header class="nav-header">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <span class="logo-icon">🛡️</span>
+                <span>Subscriber Security AI</span>
+            </div>
+            <nav class="nav-menu" id="navMenu">
+                <a href="index.html" class="nav-link active">Dashboard</a>
+                <a href="children.html" class="nav-link">Children</a>
+                <a href="app-scanning.html" class="nav-link">App Security</a>
+                <a href="monitoring.html" class="nav-link">Monitoring</a>
+                <a href="analytics.html" class="nav-link">Analytics</a>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Dashboard Header -->
+        <div class="page-header">
+            <h1>🏠 Security Dashboard</h1>
+            <p>Real-time overview of your family's digital safety</p>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-info">
+                    <h3 id="totalChildren">0</h3>
+                    <p>Children Protected</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📱</div>
+                <div class="stat-info">
+                    <h3 id="totalApps">0</h3>
+                    <p>Apps Scanned</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-info">
+                    <h3 id="totalThreats">0</h3>
+                    <p>Threats Detected</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-info">
+                    <h3 id="totalBlocked">0</h3>
+                    <p>Blocked Today</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2>📊 Recent Activity</h2>
+                <button class="btn-small" onclick="window.location.href='monitoring.html'">View All</button>
+            </div>
+            <div id="recentActivity" class="activity-list">
+                <div class="activity-item">
+                    <span class="activity-icon">📱</span>
+                    <div class="activity-details">
+                        <p class="activity-text">No recent activity</p>
+                        <span class="activity-time">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Scans -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2>🔍 Recent App Scans</h2>
+                <button class="btn-small" onclick="window.location.href='app-scanning.html'">View All Scans</button>
+            </div>
+            <div id="recentScans" class="scans-list">
+                <div class="scan-item">
+                    <div class="scan-info">
+                        <span class="scan-icon">📱</span>
+                        <div>
+                            <p class="scan-name">No scans yet</p>
+                            <span class="scan-date">Start scanning apps to see results</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Children Quick Access -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2>👥 Managed Children</h2>
+                <button class="btn-small" onclick="window.location.href='children.html'">Manage All</button>
+            </div>
+            <div id="childrenList" class="children-grid">
+                <div class="child-quick-card">
+                    <div class="child-avatar">👤</div>
+                    <p>No children added yet</p>
+                    <button class="btn-small" onclick="window.location.href='children.html'">Add Child</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="scripts/api.js"></script>
+    <script src="scripts/dashboard.js"></script>
+</body>
+</html>

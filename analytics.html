@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics & Reports - Subscriber Security AI</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <!-- Navigation Header -->
+    <header class="nav-header">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <span class="logo-icon">🛡️</span>
+                <span>Subscriber Security AI</span>
+            </div>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-link">Dashboard</a>
+                <a href="children.html" class="nav-link">Children</a>
+                <a href="app-scanning.html" class="nav-link">App Security</a>
+                <a href="monitoring.html" class="nav-link">Monitoring</a>
+                <a href="analytics.html" class="nav-link active">Analytics</a>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>📈 Analytics & Reports</h1>
+            <p>Comprehensive security insights and trend analysis</p>
+        </div>
+
+        <!-- Time Range Selector -->
+        <div class="filter-bar">
+            <div class="filter-buttons">
+                <button class="filter-btn active" onclick="setTimeRange(this, '24h')">Last 24 Hours</button>
+                <button class="filter-btn" onclick="setTimeRange(this, '7d')">Last 7 Days</button>
+                <button class="filter-btn" onclick="setTimeRange(this, '30d')">Last 30 Days</button>
+                <button class="filter-btn" onclick="setTimeRange(this, 'all')">All Time</button>
+            </div>
+            <button class="btn-small" onclick="exportReport()">📥 Export Report</button>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-grid">
+            <!-- Threat Trends -->
+            <div class="section-card chart-container">
+                <h3>🚨 Threat Detection Trends</h3>
+                <canvas id="threatTrendsChart"></canvas>
+            </div>
+
+            <!-- App Risk Distribution -->
+            <div class="section-card chart-container">
+                <h3>📱 App Risk Distribution</h3>
+                <canvas id="appRiskChart"></canvas>
+            </div>
+
+            <!-- Network Activity -->
+            <div class="section-card chart-container">
+                <h3>🌐 Network Activity Patterns</h3>
+                <canvas id="networkActivityChart"></canvas>
+            </div>
+
+            <!-- Data Usage by Child -->
+            <div class="section-card chart-container">
+                <h3>👥 Data Usage by Child</h3>
+                <canvas id="dataUsageChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Top Threats -->
+        <div class="section-card">
+            <h2>⚠️ Top Security Threats</h2>
+            <div id="topThreats" class="threats-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Threat Type</th>
+                            <th>App/Source</th>
+                            <th>Child</th>
+                            <th>Severity</th>
+                            <th>Count</th>
+                            <th>Last Seen</th>
+                        </tr>
+                    </thead>
+                    <tbody id="threatsTableBody">
+                        <tr>
+                            <td colspan="6" class="no-data-row">No threats detected</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- App Scan Summary -->
+        <div class="section-card">
+            <h2>📊 App Security Summary</h2>
+            <div id="appScanSummary" class="summary-grid">
+                <div class="summary-item">
+                    <h4>Total Apps Scanned</h4>
+                    <p class="summary-value" id="summaryTotalScans">0</p>
+                </div>
+                <div class="summary-item">
+                    <h4>Critical Vulnerabilities</h4>
+                    <p class="summary-value risk-high" id="summaryCriticalVulns">0</p>
+                </div>
+                <div class="summary-item">
+                    <h4>Trackers Detected</h4>
+                    <p class="summary-value" id="summaryTrackers">0</p>
+                </div>
+                <div class="summary-item">
+                    <h4>Risky Permissions</h4>
+                    <p class="summary-value risk-medium" id="summaryRiskyPerms">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Splunk MLTK Insights -->
+        <div class="section-card">
+            <h2>🤖 AI-Powered Security Insights</h2>
+            <div id="mltkInsights" class="insights-grid">
+                <div class="insight-card">
+                    <div class="insight-icon">🧠</div>
+                    <h4>Anomaly Detection</h4>
+                    <p id="anomalyCount">0 anomalies detected</p>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-icon">📊</div>
+                    <h4>Baseline Deviations</h4>
+                    <p id="baselineDeviations">0 deviations from normal</p>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-icon">⚡</div>
+                    <h4>Predicted Threats</h4>
+                    <p id="predictedThreats">0 potential threats</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="scripts/api.js"></script>
+    <script src="scripts/analytics.js"></script>
+</body>
+</html>

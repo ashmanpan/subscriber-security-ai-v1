@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Monitoring - Subscriber Security AI</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <!-- Navigation Header -->
+    <header class="nav-header">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <span class="logo-icon">🛡️</span>
+                <span>Subscriber Security AI</span>
+            </div>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-link">Dashboard</a>
+                <a href="children.html" class="nav-link">Children</a>
+                <a href="app-scanning.html" class="nav-link">App Security</a>
+                <a href="monitoring.html" class="nav-link active">Monitoring</a>
+                <a href="analytics.html" class="nav-link">Analytics</a>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>📊 Real-time Monitoring</h1>
+            <p>Live network activity and threat detection powered by Cisco FTD & Splunk</p>
+        </div>
+
+        <!-- Child Selector -->
+        <div class="section-card">
+            <div class="form-group">
+                <label for="childSelector">Select Child</label>
+                <select id="childSelector" onchange="loadChildActivity()">
+                    <option value="all">All Children</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Live Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🌐</div>
+                <div class="stat-info">
+                    <h3 id="activeConnections">0</h3>
+                    <p>Active Connections</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🚫</div>
+                <div class="stat-info">
+                    <h3 id="blockedRequests">0</h3>
+                    <p>Blocked Today</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⬇️</div>
+                <div class="stat-info">
+                    <h3 id="totalDownloads">0</h3>
+                    <p>File Downloads</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚡</div>
+                <div class="stat-info">
+                    <h3 id="dataUsage">0 MB</h3>
+                    <p>Data Usage Today</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Stream -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2>📡 Live Activity Stream</h2>
+                <div class="status-indicator">
+                    <span class="status-dot active"></span>
+                    <span>Live</span>
+                </div>
+            </div>
+            <div id="activityStream" class="activity-stream">
+                <!-- Live activity will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Threat Alerts -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2>🚨 Security Alerts</h2>
+                <span id="alertCount" class="badge">0</span>
+            </div>
+            <div id="threatAlerts" class="alerts-list">
+                <div class="no-data">
+                    <div class="no-data-icon">✅</div>
+                    <p>No security threats detected</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Exfiltration Detection (Splunk MLTK) -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2>🤖 AI-Powered Anomaly Detection</h2>
+                <span class="badge-info">Splunk MLTK</span>
+            </div>
+            <div id="anomalyDetection" class="anomaly-list">
+                <div class="no-data">
+                    <div class="no-data-icon">🤖</div>
+                    <p>ML models analyzing network patterns...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="scripts/api.js"></script>
+    <script src="scripts/monitoring.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+version: 1
+frontend:
+  phases:
+    build:
+      commands:
+        - echo "Building Subscriber Security AI frontend..."
+        - echo "No build step required for static HTML/JS/CSS"
+  artifacts:
+    baseDirectory: /
+    files:
+      - '**/*'
+  cache:
+    paths: []

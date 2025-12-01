@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Security Scanning - Subscriber Security AI</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <!-- Navigation Header -->
+    <header class="nav-header">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <span class="logo-icon">🛡️</span>
+                <span>Subscriber Security AI</span>
+            </div>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-link">Dashboard</a>
+                <a href="children.html" class="nav-link">Children</a>
+                <a href="app-scanning.html" class="nav-link active">App Security</a>
+                <a href="monitoring.html" class="nav-link">Monitoring</a>
+                <a href="analytics.html" class="nav-link">Analytics</a>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>🔍 Mobile App Security Scanning</h1>
+            <p>MobSF-powered security analysis of downloaded APK and IPA files</p>
+        </div>
+
+        <!-- Scan Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📱</div>
+                <div class="stat-info">
+                    <h3 id="totalScans">0</h3>
+                    <p>Total Scans</p>
+                </div>
+            </div>
+            <div class="stat-card risk-high">
+                <div class="stat-icon">🚨</div>
+                <div class="stat-info">
+                    <h3 id="highRiskApps">0</h3>
+                    <p>High Risk Apps</p>
+                </div>
+            </div>
+            <div class="stat-card risk-medium">
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-info">
+                    <h3 id="mediumRiskApps">0</h3>
+                    <p>Medium Risk Apps</p>
+                </div>
+            </div>
+            <div class="stat-card risk-low">
+                <div class="stat-icon">✅</div>
+                <div class="stat-info">
+                    <h3 id="lowRiskApps">0</h3>
+                    <p>Low Risk Apps</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter and Search -->
+        <div class="filter-bar">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Search apps..." oninput="filterScans()">
+            </div>
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all" onclick="setFilter(this, 'all')">All</button>
+                <button class="filter-btn" data-filter="high" onclick="setFilter(this, 'high')">High Risk</button>
+                <button class="filter-btn" data-filter="medium" onclick="setFilter(this, 'medium')">Medium Risk</button>
+                <button class="filter-btn" data-filter="low" onclick="setFilter(this, 'low')">Low Risk</button>
+                <button class="filter-btn" data-filter="scanning" onclick="setFilter(this, 'scanning')">Scanning</button>
+            </div>
+        </div>
+
+        <!-- Scans List -->
+        <div id="scansList" class="scans-grid">
+            <!-- Scans will be loaded here -->
+            <div class="no-data">
+                <div class="no-data-icon">📱</div>
+                <h3>No scans available</h3>
+                <p>Apps downloaded by your children will be automatically scanned</p>
+            </div>
+        </div>
+
+        <!-- Scan Details Modal -->
+        <div id="scanModal" class="modal" onclick="closeScanModal(event)">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h2 id="modalAppName">App Details</h2>
+                    <button class="modal-close" onclick="closeScanModal()">&times;</button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Scan details will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="scripts/api.js"></script>
+    <script src="scripts/app-scanning.js"></script>
+</body>
+</html>
