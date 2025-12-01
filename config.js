@@ -3,8 +3,8 @@ const CONFIG = {
     ENV: 'production',
 
     API_ENDPOINTS: {
-        // TODO: Update these with actual Load Balancer DNS when services are deployed
-        MOBSF_INTEGRATION: 'http://YOUR-ALB-DNS:6000/api/v1',
+        // Real API endpoints - Lambda function for MobSF data
+        MOBSF_INTEGRATION: 'https://6yvql2vvt0.execute-api.ap-south-1.amazonaws.com/prod',
         P_GATEWAY: 'http://YOUR-ALB-DNS:8080/api',
         FTD_INTEGRATION: 'http://YOUR-ALB-DNS:5000/api',
         ANALYTICS: 'http://YOUR-ALB-DNS:7000/api',
