@@ -1,0 +1,10 @@
+{
+  "name": "lambda-splunk-forwarder",
+  "version": "1.0.0",
+  "description": "Forwards firewall logs from DynamoDB to Splunk HEC",
+  "main": "index.js",
+  "type": "commonjs",
+  "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.940.0"
+  }
+}
