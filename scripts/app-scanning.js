@@ -1,7 +1,8 @@
-// App Scanning Page Script
+// App Scanning Page Script - Enhanced with Full MobSF Data Display
 
 let allScans = [];
 let currentFilter = 'all';
+let currentTab = 'overview';
 
 async function loadAppScanning() {
     await loadScans();
@@ -41,7 +42,8 @@ function renderScans() {
     // Filter scans
     let filteredScans = allScans.filter(scan => {
         // Apply search filter
-        if (searchQuery && !scan.appName.toLowerCase().includes(searchQuery)) {
+        if (searchQuery && !scan.appName.toLowerCase().includes(searchQuery) &&
+            !(scan.packageName && scan.packageName.toLowerCase().includes(searchQuery))) {
             return false;
         }
 
@@ -73,6 +75,7 @@ function renderScans() {
         const totalVulns = scan.vulnerabilities
             ? (scan.vulnerabilities.critical + scan.vulnerabilities.high + scan.vulnerabilities.medium + scan.vulnerabilities.low)
             : 0;
+        const dangerousPerms = scan.permissions ? scan.permissions.filter(p => p.status === 'dangerous' || p.protection === 'dangerous').length : 0;
 
         return `
             <div class="scan-card risk-${risk}" onclick="showScanDetails('${scan.scanId}')">
@@ -81,29 +84,35 @@ function renderScans() {
                         <span class="scan-icon">${scan.platform === 'Android' ? '🤖' : '🍎'}</span>
                         <div>
                             <p class="scan-name">${scan.appName}</p>
+                            <span class="scan-package">${scan.packageName || ''}</span>
+                            <span class="scan-version">v${scan.versionName || '?'}</span>
                             <span class="scan-date">${formatDate(scan.scannedAt)}</span>
                         </div>
                     </div>
-                    <span class="risk-badge ${risk}">Risk: ${scan.riskScore}/10</span>
+                    <div class="risk-score-container">
+                        <span class="risk-badge ${risk}">${scan.riskScore}/10</span>
+                    </div>
                 </div>
-                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #333;">
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; font-size: 0.9rem;">
-                        <div>
-                            <span style="color: #888;">Vulnerabilities:</span>
-                            <strong style="color: ${totalVulns > 10 ? '#ff4444' : '#00ff88'}; margin-left: 0.5rem;">${totalVulns}</strong>
-                        </div>
-                        <div>
-                            <span style="color: #888;">Trackers:</span>
-                            <strong style="color: ${scan.trackers > 10 ? '#ffaa00' : '#00ff88'}; margin-left: 0.5rem;">${scan.trackers || 0}</strong>
-                        </div>
-                        <div>
-                            <span style="color: #888;">Critical:</span>
-                            <strong style="color: #ff4444; margin-left: 0.5rem;">${scan.vulnerabilities?.critical || 0}</strong>
-                        </div>
-                        <div>
-                            <span style="color: #888;">Permissions:</span>
-                            <strong style="color: #00aaff; margin-left: 0.5rem;">${scan.permissions?.length || 0}</strong>
-                        </div>
+                <div class="scan-quick-stats">
+                    <div class="quick-stat">
+                        <span class="quick-stat-icon">🚨</span>
+                        <span class="quick-stat-value ${scan.vulnerabilities?.critical > 0 ? 'danger' : ''}">${scan.vulnerabilities?.critical || 0}</span>
+                        <span class="quick-stat-label">Critical</span>
+                    </div>
+                    <div class="quick-stat">
+                        <span class="quick-stat-icon">⚠️</span>
+                        <span class="quick-stat-value ${totalVulns > 10 ? 'warning' : ''}">${totalVulns}</span>
+                        <span class="quick-stat-label">Vulns</span>
+                    </div>
+                    <div class="quick-stat">
+                        <span class="quick-stat-icon">🔑</span>
+                        <span class="quick-stat-value ${dangerousPerms > 5 ? 'warning' : ''}">${dangerousPerms}</span>
+                        <span class="quick-stat-label">Dangerous</span>
+                    </div>
+                    <div class="quick-stat">
+                        <span class="quick-stat-icon">📊</span>
+                        <span class="quick-stat-value ${scan.trackers > 10 ? 'warning' : ''}">${scan.trackers || 0}</span>
+                        <span class="quick-stat-label">Trackers</span>
                     </div>
                 </div>
             </div>
@@ -119,494 +128,683 @@ async function showScanDetails(scanId) {
     const modalBody = document.getElementById('modalBody');
     const modalAppName = document.getElementById('modalAppName');
 
-    modalAppName.textContent = scan.appName;
+    modalAppName.textContent = `${scan.appName} - Security Analysis`;
+    currentTab = 'overview';
 
-    // Build detailed view with tabs
+    // Build comprehensive detailed view with tabs
     const risk = getRiskLevel(scan.riskScore);
     const riskColor = getRiskColor(risk);
 
     modalBody.innerHTML = `
-        <div style="margin-bottom: 2rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h3 style="color: #fff;">Risk Assessment</h3>
-                <span style="font-size: 3rem; font-weight: 700; color: ${riskColor};">${scan.riskScore}/10</span>
+        <!-- App Header -->
+        <div class="scan-detail-header">
+            <div class="app-icon-large">${scan.platform === 'Android' ? '🤖' : '🍎'}</div>
+            <div class="app-header-info">
+                <h2>${scan.appName}</h2>
+                <p class="package-name">${scan.packageName || 'Unknown Package'}</p>
+                <div class="app-meta">
+                    <span class="meta-item">v${scan.versionName || '?'} (${scan.versionCode || '?'})</span>
+                    <span class="meta-item">${formatBytes(scan.fileSize || 0)}</span>
+                    <span class="meta-item">${scan.platform}</span>
+                    <span class="meta-item">SDK ${scan.minSdk || '?'} - ${scan.targetSdk || '?'}</span>
+                </div>
             </div>
-            <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px;">
-                <p><strong>Platform:</strong> ${scan.platform}</p>
-                <p><strong>File Hash:</strong> <code style="color: #00aaff; font-size: 0.85rem;">${scan.fileHash}</code></p>
-                <p><strong>Scanned:</strong> ${formatDate(scan.scannedAt)}</p>
-                <p><strong>Status:</strong> <span style="color: #00ff88;">${scan.status}</span></p>
-                ${scan.malwareIndicators?.isMalware ? `
-                    <div style="background: rgba(255,68,68,0.2); border: 1px solid #ff4444; padding: 1rem; border-radius: 8px; margin-top: 1rem;">
-                        <p style="color: #ff4444; font-weight: 700; margin-bottom: 0.5rem;">⚠️ MALWARE DETECTED (${scan.malwareIndicators.confidence}% confidence)</p>
-                        <p style="color: #888; font-size: 0.9rem;">This application exhibits malicious behavior and should be removed immediately.</p>
-                    </div>
-                ` : ''}
+            <div class="risk-score-large" style="background: ${riskColor}20; border-color: ${riskColor};">
+                <span class="score-value" style="color: ${riskColor};">${scan.riskScore}</span>
+                <span class="score-label">Risk Score</span>
             </div>
         </div>
 
-        <!-- Tab Navigation -->
-        <div style="border-bottom: 2px solid #333; margin-bottom: 1.5rem;">
-            <div style="display: flex; gap: 1rem;">
-                <button onclick="showTab('overview')" id="tab-overview" class="scan-tab active-tab" style="background: none; border: none; color: #00ff88; padding: 0.75rem 1rem; cursor: pointer; border-bottom: 2px solid #00ff88; font-weight: 600;">
-                    Overview
-                </button>
-                <button onclick="showTab('vulnerabilities')" id="tab-vulnerabilities" class="scan-tab" style="background: none; border: none; color: #888; padding: 0.75rem 1rem; cursor: pointer; border-bottom: 2px solid transparent; font-weight: 600;">
-                    Vulnerabilities
-                </button>
-                <button onclick="showTab('code')" id="tab-code" class="scan-tab" style="background: none; border: none; color: #888; padding: 0.75rem 1rem; cursor: pointer; border-bottom: 2px solid transparent; font-weight: 600;">
-                    Code Analysis
-                </button>
-                <button onclick="showTab('network')" id="tab-network" class="scan-tab" style="background: none; border: none; color: #888; padding: 0.75rem 1rem; cursor: pointer; border-bottom: 2px solid transparent; font-weight: 600;">
-                    Network
-                </button>
-                <button onclick="showTab('certificate')" id="tab-certificate" class="scan-tab" style="background: none; border: none; color: #888; padding: 0.75rem 1rem; cursor: pointer; border-bottom: 2px solid transparent; font-weight: 600;">
-                    Certificate
-                </button>
-            </div>
+        <!-- Navigation Tabs -->
+        <div class="detail-tabs">
+            <button class="detail-tab active" onclick="switchTab('overview', '${scanId}')">Overview</button>
+            <button class="detail-tab" onclick="switchTab('vulnerabilities', '${scanId}')">Vulnerabilities</button>
+            <button class="detail-tab" onclick="switchTab('permissions', '${scanId}')">Permissions</button>
+            <button class="detail-tab" onclick="switchTab('trackers', '${scanId}')">Trackers</button>
+            <button class="detail-tab" onclick="switchTab('code', '${scanId}')">Code Analysis</button>
+            <button class="detail-tab" onclick="switchTab('network', '${scanId}')">Network</button>
+            <button class="detail-tab" onclick="switchTab('binary', '${scanId}')">Binary</button>
+            <button class="detail-tab" onclick="switchTab('certificate', '${scanId}')">Certificate</button>
         </div>
 
         <!-- Tab Content -->
-        <div id="tab-content-overview" class="tab-content">
-            ${renderOverviewTab(scan, riskColor)}
-        </div>
-        <div id="tab-content-vulnerabilities" class="tab-content" style="display: none;">
-            ${renderVulnerabilitiesTab(scan)}
-        </div>
-        <div id="tab-content-code" class="tab-content" style="display: none;">
-            ${renderCodeAnalysisTab(scan)}
-        </div>
-        <div id="tab-content-network" class="tab-content" style="display: none;">
-            ${renderNetworkTab(scan)}
-        </div>
-        <div id="tab-content-certificate" class="tab-content" style="display: none;">
-            ${renderCertificateTab(scan)}
+        <div class="detail-tab-content" id="tabContent">
+            ${renderOverviewTab(scan)}
         </div>
     `;
 
     modal.classList.add('show');
 }
 
-function showTab(tabName) {
-    // Hide all tabs
-    document.querySelectorAll('.tab-content').forEach(tab => {
-        tab.style.display = 'none';
-    });
+function switchTab(tabName, scanId) {
+    const scan = allScans.find(s => s.scanId === scanId);
+    if (!scan) return;
 
-    // Remove active state from all tab buttons
-    document.querySelectorAll('.scan-tab').forEach(btn => {
-        btn.style.color = '#888';
-        btn.style.borderBottom = '2px solid transparent';
-        btn.classList.remove('active-tab');
-    });
+    currentTab = tabName;
 
-    // Show selected tab
-    document.getElementById(`tab-content-${tabName}`).style.display = 'block';
+    // Update active tab
+    document.querySelectorAll('.detail-tab').forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
 
-    // Activate selected tab button
-    const activeBtn = document.getElementById(`tab-${tabName}`);
-    activeBtn.style.color = '#00ff88';
-    activeBtn.style.borderBottom = '2px solid #00ff88';
-    activeBtn.classList.add('active-tab');
+    // Render tab content
+    const tabContent = document.getElementById('tabContent');
+    switch(tabName) {
+        case 'overview':
+            tabContent.innerHTML = renderOverviewTab(scan);
+            break;
+        case 'vulnerabilities':
+            tabContent.innerHTML = renderVulnerabilitiesTab(scan);
+            break;
+        case 'permissions':
+            tabContent.innerHTML = renderPermissionsTab(scan);
+            break;
+        case 'trackers':
+            tabContent.innerHTML = renderTrackersTab(scan);
+            break;
+        case 'code':
+            tabContent.innerHTML = renderCodeAnalysisTab(scan);
+            break;
+        case 'network':
+            tabContent.innerHTML = renderNetworkTab(scan);
+            break;
+        case 'binary':
+            tabContent.innerHTML = renderBinaryTab(scan);
+            break;
+        case 'certificate':
+            tabContent.innerHTML = renderCertificateTab(scan);
+            break;
+    }
 }
 
-function renderOverviewTab(scan, riskColor) {
-    const totalVulns = (scan.vulnerabilities?.critical || 0) + (scan.vulnerabilities?.high || 0) +
-                      (scan.vulnerabilities?.medium || 0) + (scan.vulnerabilities?.low || 0);
+function renderOverviewTab(scan) {
+    const totalVulns = scan.vulnerabilities ?
+        (scan.vulnerabilities.critical + scan.vulnerabilities.high + scan.vulnerabilities.medium + scan.vulnerabilities.low) : 0;
+    const dangerousPerms = scan.permissions ? scan.permissions.filter(p => p.status === 'dangerous' || p.protection === 'dangerous').length : 0;
 
     return `
-        <div style="margin-bottom: 2rem;">
-            <h3 style="color: #fff; margin-bottom: 1rem;">🚨 Vulnerabilities Summary</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
-                <div style="background: rgba(255,68,68,0.1); border: 1px solid #ff4444; padding: 1rem; border-radius: 10px; text-align: center;">
-                    <div style="font-size: 2rem; font-weight: 700; color: #ff4444;">${scan.vulnerabilities?.critical || 0}</div>
-                    <div style="color: #888;">Critical</div>
+        <!-- Quick Summary Cards -->
+        <div class="overview-grid">
+            <div class="overview-card danger">
+                <div class="overview-icon">🚨</div>
+                <div class="overview-value">${scan.vulnerabilities?.critical || 0}</div>
+                <div class="overview-label">Critical Issues</div>
+            </div>
+            <div class="overview-card warning">
+                <div class="overview-icon">⚠️</div>
+                <div class="overview-value">${totalVulns}</div>
+                <div class="overview-label">Total Vulnerabilities</div>
+            </div>
+            <div class="overview-card info">
+                <div class="overview-icon">🔑</div>
+                <div class="overview-value">${dangerousPerms}/${scan.permissions?.length || 0}</div>
+                <div class="overview-label">Dangerous Permissions</div>
+            </div>
+            <div class="overview-card neutral">
+                <div class="overview-icon">📊</div>
+                <div class="overview-value">${scan.trackers || 0}</div>
+                <div class="overview-label">Trackers Detected</div>
+            </div>
+        </div>
+
+        <!-- Vulnerability Breakdown -->
+        <div class="detail-section">
+            <h3>Vulnerability Breakdown</h3>
+            <div class="vuln-breakdown">
+                <div class="vuln-bar">
+                    <div class="vuln-segment critical" style="width: ${(scan.vulnerabilities?.critical || 0) * 5}%"></div>
+                    <div class="vuln-segment high" style="width: ${(scan.vulnerabilities?.high || 0) * 3}%"></div>
+                    <div class="vuln-segment medium" style="width: ${(scan.vulnerabilities?.medium || 0) * 2}%"></div>
+                    <div class="vuln-segment low" style="width: ${(scan.vulnerabilities?.low || 0) * 1}%"></div>
                 </div>
-                <div style="background: rgba(255,68,68,0.1); border: 1px solid #ff6666; padding: 1rem; border-radius: 10px; text-align: center;">
-                    <div style="font-size: 2rem; font-weight: 700; color: #ff6666;">${scan.vulnerabilities?.high || 0}</div>
-                    <div style="color: #888;">High</div>
-                </div>
-                <div style="background: rgba(255,170,0,0.1); border: 1px solid #ffaa00; padding: 1rem; border-radius: 10px; text-align: center;">
-                    <div style="font-size: 2rem; font-weight: 700; color: #ffaa00;">${scan.vulnerabilities?.medium || 0}</div>
-                    <div style="color: #888;">Medium</div>
-                </div>
-                <div style="background: rgba(0,255,136,0.1); border: 1px solid #00ff88; padding: 1rem; border-radius: 10px; text-align: center;">
-                    <div style="font-size: 2rem; font-weight: 700; color: #00ff88;">${scan.vulnerabilities?.low || 0}</div>
-                    <div style="color: #888;">Low</div>
+                <div class="vuln-legend">
+                    <span class="legend-item"><span class="dot critical"></span> Critical: ${scan.vulnerabilities?.critical || 0}</span>
+                    <span class="legend-item"><span class="dot high"></span> High: ${scan.vulnerabilities?.high || 0}</span>
+                    <span class="legend-item"><span class="dot medium"></span> Medium: ${scan.vulnerabilities?.medium || 0}</span>
+                    <span class="legend-item"><span class="dot low"></span> Low: ${scan.vulnerabilities?.low || 0}</span>
+                    <span class="legend-item"><span class="dot info"></span> Info: ${scan.vulnerabilities?.info || 0}</span>
                 </div>
             </div>
         </div>
 
-        <div style="margin-bottom: 2rem;">
-            <h3 style="color: #fff; margin-bottom: 1rem;">🔑 Permissions (${scan.permissions?.length || 0})</h3>
-            <div style="max-height: 200px; overflow-y: auto; background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px;">
-                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                    ${scan.permissions?.map(perm => {
-                        const isDangerous = ['CAMERA', 'RECORD_AUDIO', 'READ_CONTACTS', 'READ_SMS', 'SEND_SMS', 'CALL_PHONE', 'ACCESS_FINE_LOCATION', 'READ_PHONE_STATE'].includes(perm);
-                        return `
-                            <span style="background: rgba(${isDangerous ? '255,68,68' : '0,170,255'},0.2); color: ${isDangerous ? '#ff4444' : '#00aaff'}; border: 1px solid ${isDangerous ? '#ff4444' : '#00aaff'}; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem;">
-                                ${isDangerous ? '⚠️ ' : ''}${perm}
-                            </span>
-                        `;
-                    }).join('') || '<p style="color: #888;">No permissions data</p>'}
-                </div>
+        <!-- Security Checklist -->
+        <div class="detail-section">
+            <h3>Security Checklist</h3>
+            <div class="security-checklist">
+                ${renderChecklistItem('Certificate Pinning', scan.networkSecurity?.certificatePinning)}
+                ${renderChecklistItem('HTTPS Only', !scan.networkSecurity?.cleartextPermitted)}
+                ${renderChecklistItem('Root Detection', scan.binaryAnalysis?.rootDetection)}
+                ${renderChecklistItem('Anti-Tampering', scan.binaryAnalysis?.antiTampering)}
+                ${renderChecklistItem('Code Obfuscation', scan.binaryAnalysis?.obfuscation && scan.binaryAnalysis?.obfuscation !== 'None')}
+                ${renderChecklistItem('No Debuggable', !scan.manifestAnalysis?.debuggable)}
+                ${renderChecklistItem('Backup Disabled', !scan.manifestAnalysis?.allowBackup)}
+                ${renderChecklistItem('No Hardcoded Secrets', !scan.codeAnalysis?.hardcodedSecrets?.length)}
             </div>
         </div>
 
-        <div style="margin-bottom: 2rem;">
-            <h3 style="color: #fff; margin-bottom: 1rem;">📊 Trackers Detected (${scan.trackers || 0})</h3>
-            ${scan.trackersList && scan.trackersList.length > 0 ? `
-                <div style="max-height: 200px; overflow-y: auto; background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px;">
-                    ${scan.trackersList.map(tracker => `
-                        <div style="padding: 0.5rem; border-bottom: 1px solid #333; display: flex; justify-content: space-between;">
-                            <span style="color: #fff;">${tracker.name}</span>
-                            <span style="color: #888; font-size: 0.85rem;">${tracker.category}</span>
-                        </div>
-                    `).join('')}
-                </div>
-            ` : `
-                <div style="background: rgba(255,170,0,0.1); border: 1px solid #ffaa00; padding: 1.5rem; border-radius: 10px; text-align: center;">
-                    <div style="font-size: 3rem; font-weight: 700; color: #ffaa00;">${scan.trackers || 0}</div>
-                    <div style="color: #888; margin-top: 0.5rem;">Third-party trackers found</div>
-                </div>
-            `}
-        </div>
-
-        <div style="margin-bottom: 2rem;">
-            <h3 style="color: #fff; margin-bottom: 1rem;">📱 App Components</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem;">
-                ${scan.components ? `
-                    <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; text-align: center;">
-                        <div style="font-size: 1.5rem; font-weight: 700; color: #00aaff;">${scan.components.activities || 0}</div>
-                        <div style="color: #888; font-size: 0.85rem;">Activities</div>
-                    </div>
-                    <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; text-align: center;">
-                        <div style="font-size: 1.5rem; font-weight: 700; color: #00aaff;">${scan.components.services || 0}</div>
-                        <div style="color: #888; font-size: 0.85rem;">Services</div>
-                    </div>
-                    <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; text-align: center;">
-                        <div style="font-size: 1.5rem; font-weight: 700; color: #00aaff;">${scan.components.receivers || 0}</div>
-                        <div style="color: #888; font-size: 0.85rem;">Receivers</div>
-                    </div>
-                    <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; text-align: center;">
-                        <div style="font-size: 1.5rem; font-weight: 700; color: #00aaff;">${scan.components.providers || 0}</div>
-                        <div style="color: #888; font-size: 0.85rem;">Providers</div>
-                    </div>
-                ` : '<p style="color: #888;">No component data</p>'}
-            </div>
-        </div>
-
-        ${scan.manifestAnalysis ? `
-            <div style="margin-bottom: 2rem;">
-                <h3 style="color: #fff; margin-bottom: 1rem;">📄 Manifest Analysis</h3>
-                <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px;">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                        <div>
-                            <span style="color: #888;">Min SDK:</span>
-                            <strong style="color: #fff; margin-left: 0.5rem;">${scan.manifestAnalysis.minSdk}</strong>
-                        </div>
-                        <div>
-                            <span style="color: #888;">Target SDK:</span>
-                            <strong style="color: #fff; margin-left: 0.5rem;">${scan.manifestAnalysis.targetSdk}</strong>
-                        </div>
-                        <div>
-                            <span style="color: #888;">Debuggable:</span>
-                            <strong style="color: ${scan.manifestAnalysis.debuggable ? '#ff4444' : '#00ff88'}; margin-left: 0.5rem;">
-                                ${scan.manifestAnalysis.debuggable ? '⚠️ Yes' : 'No'}
-                            </strong>
-                        </div>
-                        <div>
-                            <span style="color: #888;">Allow Backup:</span>
-                            <strong style="color: ${scan.manifestAnalysis.allowBackup ? '#ffaa00' : '#00ff88'}; margin-left: 0.5rem;">
-                                ${scan.manifestAnalysis.allowBackup ? 'Yes' : 'No'}
-                            </strong>
-                        </div>
-                        <div>
-                            <span style="color: #888;">Cleartext Traffic:</span>
-                            <strong style="color: ${scan.manifestAnalysis.usesCleartextTraffic ? '#ff4444' : '#00ff88'}; margin-left: 0.5rem;">
-                                ${scan.manifestAnalysis.usesCleartextTraffic ? '⚠️ Allowed' : 'Blocked'}
-                            </strong>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        ` : ''}
-
-        <div style="margin-bottom: 1rem;">
-            <h3 style="color: #fff; margin-bottom: 1rem;">💡 Recommendations</h3>
-            <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px;">
+        <!-- Recommendations -->
+        <div class="detail-section">
+            <h3>Recommendations</h3>
+            <div class="recommendations-box ${scan.riskScore >= 7 ? 'danger' : scan.riskScore >= 4 ? 'warning' : 'safe'}">
                 ${scan.riskScore >= 7 ? `
-                    <p style="color: #ff4444; margin-bottom: 0.5rem;">⚠️ <strong>High Risk App - Not Recommended</strong></p>
-                    <p style="color: #888;">This app has significant security concerns. Consider blocking it or monitoring usage closely.</p>
-                    ${scan.malwareIndicators?.reasons ? `
-                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #333;">
-                            <p style="color: #ff4444; font-weight: 700; margin-bottom: 0.5rem;">Malware Indicators:</p>
-                            <ul style="color: #888; margin-left: 1.5rem;">
-                                ${scan.malwareIndicators.reasons.map(reason => `<li style="margin-bottom: 0.3rem;">${reason}</li>`).join('')}
-                            </ul>
-                        </div>
-                    ` : ''}
+                    <div class="rec-header danger">
+                        <span class="rec-icon">🚫</span>
+                        <span class="rec-title">HIGH RISK - Not Recommended for Children</span>
+                    </div>
+                    <p>This app has significant security and privacy concerns. Consider blocking it or monitoring usage closely.</p>
+                    <ul>
+                        <li>Contains ${scan.vulnerabilities?.critical || 0} critical security vulnerabilities</li>
+                        <li>Requests ${dangerousPerms} dangerous permissions</li>
+                        <li>Includes ${scan.trackers || 0} third-party trackers</li>
+                    </ul>
                 ` : scan.riskScore >= 4 ? `
-                    <p style="color: #ffaa00; margin-bottom: 0.5rem;">⚠️ <strong>Medium Risk - Use with Caution</strong></p>
-                    <p style="color: #888;">This app has some security issues. Monitor usage and review permissions regularly.</p>
+                    <div class="rec-header warning">
+                        <span class="rec-icon">⚠️</span>
+                        <span class="rec-title">MEDIUM RISK - Use with Caution</span>
+                    </div>
+                    <p>This app has some security issues. Monitor usage and review permissions regularly.</p>
+                    <ul>
+                        <li>Review the ${dangerousPerms} dangerous permissions granted</li>
+                        <li>Be aware of ${scan.trackers || 0} trackers collecting data</li>
+                    </ul>
                 ` : `
-                    <p style="color: #00ff88; margin-bottom: 0.5rem;">✅ <strong>Low Risk - Generally Safe</strong></p>
-                    <p style="color: #888;">This app appears to be relatively safe, but continue monitoring as needed.</p>
+                    <div class="rec-header safe">
+                        <span class="rec-icon">✅</span>
+                        <span class="rec-title">LOW RISK - Generally Safe</span>
+                    </div>
+                    <p>This app appears to be relatively safe, but continue monitoring as needed.</p>
                 `}
+            </div>
+        </div>
+
+        <!-- File Info -->
+        <div class="detail-section">
+            <h3>File Information</h3>
+            <div class="file-info-grid">
+                <div class="file-info-item">
+                    <span class="file-info-label">File Name</span>
+                    <span class="file-info-value">${scan.fileName || 'N/A'}</span>
+                </div>
+                <div class="file-info-item">
+                    <span class="file-info-label">SHA256</span>
+                    <span class="file-info-value hash">${scan.sha256 || scan.fileHash || 'N/A'}</span>
+                </div>
+                <div class="file-info-item">
+                    <span class="file-info-label">Scanned</span>
+                    <span class="file-info-value">${formatDate(scan.scannedAt)}</span>
+                </div>
+                <div class="file-info-item">
+                    <span class="file-info-label">Status</span>
+                    <span class="file-info-value status-${scan.status}">${scan.status}</span>
+                </div>
             </div>
         </div>
     `;
 }
 
 function renderVulnerabilitiesTab(scan) {
-    if (!scan.vulnerabilityDetails || scan.vulnerabilityDetails.length === 0) {
+    const vulns = scan.vulnerabilities?.details || [];
+
+    if (vulns.length === 0) {
         return `
-            <div class="no-data">
-                <p style="color: #888;">No detailed vulnerability information available</p>
+            <div class="empty-tab">
+                <span class="empty-icon">✅</span>
+                <h3>No Detailed Vulnerabilities</h3>
+                <p>No specific vulnerability details available for this scan.</p>
             </div>
         `;
     }
 
-    const groupedVulns = {
-        critical: scan.vulnerabilityDetails.filter(v => v.severity === 'critical'),
-        high: scan.vulnerabilityDetails.filter(v => v.severity === 'high'),
-        medium: scan.vulnerabilityDetails.filter(v => v.severity === 'medium'),
-        low: scan.vulnerabilityDetails.filter(v => v.severity === 'low')
-    };
+    return `
+        <div class="detail-section">
+            <h3>Vulnerability Details (${vulns.length} found)</h3>
+            <div class="vuln-list">
+                ${vulns.map(vuln => `
+                    <div class="vuln-item ${vuln.severity}">
+                        <div class="vuln-header">
+                            <span class="vuln-severity ${vuln.severity}">${vuln.severity.toUpperCase()}</span>
+                            <span class="vuln-title">${vuln.title}</span>
+                            <span class="vuln-cvss">CVSS: ${vuln.cvss}</span>
+                        </div>
+                        <div class="vuln-body">
+                            <p class="vuln-desc">${vuln.description}</p>
+                            <div class="vuln-meta">
+                                <span class="vuln-cwe">${vuln.cwe}</span>
+                                <span class="vuln-file">📁 ${vuln.file}:${vuln.line}</span>
+                            </div>
+                            ${vuln.remediation ? `
+                                <div class="vuln-remediation">
+                                    <strong>Remediation:</strong> ${vuln.remediation}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function renderPermissionsTab(scan) {
+    const permissions = scan.permissions || [];
+    const dangerous = permissions.filter(p => p.status === 'dangerous' || p.protection === 'dangerous');
+    const normal = permissions.filter(p => p.status === 'normal' || p.protection === 'normal');
 
     return `
-        ${Object.entries(groupedVulns).map(([severity, vulns]) => {
-            if (vulns.length === 0) return '';
-
-            const colors = {
-                critical: '#ff4444',
-                high: '#ff6666',
-                medium: '#ffaa00',
-                low: '#00ff88'
-            };
-
-            return `
-                <div style="margin-bottom: 2rem;">
-                    <h3 style="color: ${colors[severity]}; margin-bottom: 1rem; text-transform: uppercase;">
-                        ${severity} Severity (${vulns.length})
-                    </h3>
-                    ${vulns.map(vuln => `
-                        <div style="background: rgba(255,255,255,0.05); border-left: 3px solid ${colors[severity]}; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
-                                <h4 style="color: #fff; margin: 0;">${vuln.title}</h4>
-                                <span style="background: rgba(${severity === 'critical' ? '255,68,68' : severity === 'high' ? '255,102,102' : severity === 'medium' ? '255,170,0' : '0,255,136'},0.2); color: ${colors[severity]}; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">
-                                    CVSS ${vuln.cvss}
-                                </span>
+        <div class="detail-section">
+            <h3>Dangerous Permissions (${dangerous.length})</h3>
+            ${dangerous.length > 0 ? `
+                <div class="permissions-list">
+                    ${dangerous.map(perm => `
+                        <div class="permission-item dangerous">
+                            <div class="perm-icon">🔴</div>
+                            <div class="perm-info">
+                                <span class="perm-name">${perm.name}</span>
+                                <span class="perm-desc">${perm.description}</span>
                             </div>
-                            <p style="color: #ccc; margin: 0.75rem 0;">${vuln.description}</p>
-                            <p style="color: #888; font-size: 0.85rem; margin: 0;">
-                                <strong>File:</strong> <code style="color: #00aaff;">${vuln.file}</code>
-                            </p>
+                            <span class="perm-badge dangerous">DANGEROUS</span>
                         </div>
                     `).join('')}
                 </div>
-            `;
-        }).join('')}
+            ` : '<p class="no-items">No dangerous permissions requested</p>'}
+        </div>
+
+        <div class="detail-section">
+            <h3>Normal Permissions (${normal.length})</h3>
+            ${normal.length > 0 ? `
+                <div class="permissions-list">
+                    ${normal.map(perm => `
+                        <div class="permission-item normal">
+                            <div class="perm-icon">🟢</div>
+                            <div class="perm-info">
+                                <span class="perm-name">${perm.name}</span>
+                                <span class="perm-desc">${perm.description}</span>
+                            </div>
+                            <span class="perm-badge normal">NORMAL</span>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '<p class="no-items">No normal permissions</p>'}
+        </div>
+    `;
+}
+
+function renderTrackersTab(scan) {
+    const trackers = scan.trackerDetails || [];
+
+    // Group trackers by category
+    const categories = {};
+    trackers.forEach(t => {
+        if (!categories[t.category]) categories[t.category] = [];
+        categories[t.category].push(t);
+    });
+
+    const categoryIcons = {
+        'Analytics': '📊',
+        'Advertising': '📢',
+        'Social': '🔗',
+        'Crash Reporting': '🐛',
+        'Location': '📍'
+    };
+
+    return `
+        <div class="detail-section">
+            <h3>Trackers Detected (${scan.trackers || trackers.length})</h3>
+            <div class="privacy-impact ${scan.trackers > 10 ? 'high' : scan.trackers > 5 ? 'medium' : 'low'}">
+                <span class="impact-icon">${scan.trackers > 10 ? '🔴' : scan.trackers > 5 ? '🟡' : '🟢'}</span>
+                <span class="impact-text">Privacy Impact: ${scan.trackers > 10 ? 'HIGH' : scan.trackers > 5 ? 'MEDIUM' : 'LOW'}</span>
+                <span class="impact-desc">This app shares data with ${scan.trackers || trackers.length} third-party companies</span>
+            </div>
+        </div>
+
+        ${Object.keys(categories).map(cat => `
+            <div class="detail-section">
+                <h3>${categoryIcons[cat] || '📦'} ${cat} (${categories[cat].length})</h3>
+                <div class="trackers-list">
+                    ${categories[cat].map(tracker => `
+                        <div class="tracker-item">
+                            <div class="tracker-info">
+                                <span class="tracker-name">${tracker.name}</span>
+                                <span class="tracker-desc">${tracker.description}</span>
+                            </div>
+                            <a href="${tracker.website}" target="_blank" class="tracker-link">Learn More →</a>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `).join('')}
+
+        ${trackers.length === 0 ? `
+            <div class="empty-tab">
+                <span class="empty-icon">🎉</span>
+                <h3>No Trackers Detected</h3>
+                <p>This app doesn't appear to contain known trackers.</p>
+            </div>
+        ` : ''}
     `;
 }
 
 function renderCodeAnalysisTab(scan) {
-    if (!scan.codeAnalysis) {
-        return `
-            <div class="no-data">
-                <p style="color: #888;">No code analysis data available</p>
-            </div>
-        `;
-    }
+    const code = scan.codeAnalysis || {};
 
     return `
-        ${scan.codeAnalysis.hardcodedSecrets && scan.codeAnalysis.hardcodedSecrets.length > 0 ? `
-            <div style="margin-bottom: 2rem;">
-                <h3 style="color: #ff4444; margin-bottom: 1rem;">🚨 Hardcoded Secrets</h3>
-                <div style="background: rgba(255,68,68,0.1); border: 1px solid #ff4444; padding: 1rem; border-radius: 10px;">
-                    ${scan.codeAnalysis.hardcodedSecrets.map(secret => `
-                        <div style="background: rgba(0,0,0,0.3); padding: 0.75rem; border-radius: 6px; margin-bottom: 0.5rem; font-family: monospace;">
-                            <code style="color: #ff4444;">${secret}</code>
+        <!-- Hardcoded Secrets -->
+        <div class="detail-section">
+            <h3>🔑 Exposed Secrets (${code.hardcodedSecrets?.length || 0})</h3>
+            ${code.hardcodedSecrets?.length > 0 ? `
+                <div class="secrets-list">
+                    ${code.hardcodedSecrets.map(secret => `
+                        <div class="secret-item">
+                            <span class="secret-type">${secret.type}</span>
+                            <span class="secret-service">${secret.service}</span>
+                            <code class="secret-value">${secret.value}</code>
+                            <span class="secret-file">📁 ${secret.file}</span>
                         </div>
                     `).join('')}
                 </div>
-            </div>
-        ` : ''}
-
-        ${scan.codeAnalysis.insecureFunctions && scan.codeAnalysis.insecureFunctions.length > 0 ? `
-            <div style="margin-bottom: 2rem;">
-                <h3 style="color: #ffaa00; margin-bottom: 1rem;">⚠️ Insecure Functions</h3>
-                <div style="background: rgba(255,170,0,0.1); border: 1px solid #ffaa00; padding: 1rem; border-radius: 10px;">
-                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                        ${scan.codeAnalysis.insecureFunctions.map(func => `
-                            <span style="background: rgba(255,170,0,0.2); color: #ffaa00; border: 1px solid #ffaa00; padding: 0.5rem 1rem; border-radius: 20px; font-family: monospace; font-size: 0.85rem;">
-                                ${func}
-                            </span>
-                        `).join('')}
-                    </div>
+                <div class="code-warning">
+                    ⚠️ Hardcoded secrets can be extracted by attackers and abused
                 </div>
-            </div>
-        ` : ''}
+            ` : '<p class="no-items safe">✅ No hardcoded secrets found</p>'}
+        </div>
 
-        ${scan.codeAnalysis.sqlInjection && scan.codeAnalysis.sqlInjection.length > 0 ? `
-            <div style="margin-bottom: 2rem;">
-                <h3 style="color: #ff4444; margin-bottom: 1rem;">💉 SQL Injection Risks</h3>
-                <div style="background: rgba(255,68,68,0.1); border: 1px solid #ff4444; padding: 1rem; border-radius: 10px;">
-                    ${scan.codeAnalysis.sqlInjection.map(sql => `
-                        <div style="background: rgba(0,0,0,0.3); padding: 0.75rem; border-radius: 6px; margin-bottom: 0.5rem; font-family: monospace;">
-                            <code style="color: #ff6666;">${sql}</code>
+        <!-- Firebase URLs -->
+        <div class="detail-section">
+            <h3>🔥 Firebase URLs (${code.firebaseUrls?.length || 0})</h3>
+            ${code.firebaseUrls?.length > 0 ? `
+                <div class="urls-list">
+                    ${code.firebaseUrls.map(url => `
+                        <div class="url-item warning">
+                            <span class="url-icon">🔥</span>
+                            <span class="url-value">${url}</span>
+                            <span class="url-warning">⚠️ Check Firebase security rules!</span>
                         </div>
                     `).join('')}
                 </div>
-            </div>
-        ` : ''}
+            ` : '<p class="no-items">No Firebase URLs found</p>'}
+        </div>
 
-        ${scan.codeAnalysis.cryptoIssues && scan.codeAnalysis.cryptoIssues.length > 0 ? `
-            <div style="margin-bottom: 2rem;">
-                <h3 style="color: #ffaa00; margin-bottom: 1rem;">🔐 Cryptography Issues</h3>
-                <div style="background: rgba(255,170,0,0.1); border: 1px solid #ffaa00; padding: 1rem; border-radius: 10px;">
-                    <ul style="color: #ccc; margin: 0; padding-left: 1.5rem;">
-                        ${scan.codeAnalysis.cryptoIssues.map(issue => `
-                            <li style="margin-bottom: 0.5rem;">${issue}</li>
-                        `).join('')}
+        <!-- S3 Buckets -->
+        <div class="detail-section">
+            <h3>☁️ S3 Buckets (${code.s3Buckets?.length || 0})</h3>
+            ${code.s3Buckets?.length > 0 ? `
+                <div class="urls-list">
+                    ${code.s3Buckets.map(bucket => `
+                        <div class="url-item warning">
+                            <span class="url-icon">☁️</span>
+                            <span class="url-value">${bucket}</span>
+                            <span class="url-warning">⚠️ Verify bucket is not public!</span>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '<p class="no-items">No S3 buckets found</p>'}
+        </div>
+
+        <!-- External URLs -->
+        <div class="detail-section">
+            <h3>🌐 External URLs (${code.exposedUrls?.length || 0})</h3>
+            ${code.exposedUrls?.length > 0 ? `
+                <div class="urls-list">
+                    ${code.exposedUrls.map(item => `
+                        <div class="url-item ${item.secure ? 'secure' : 'insecure'}">
+                            <span class="url-icon">${item.secure ? '🔒' : '⚠️'}</span>
+                            <span class="url-value">${item.url}</span>
+                            <span class="url-status ${item.secure ? 'secure' : 'insecure'}">${item.secure ? 'HTTPS' : 'HTTP'}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '<p class="no-items">No URLs extracted</p>'}
+        </div>
+
+        <!-- Emails & IPs -->
+        <div class="detail-section-row">
+            <div class="detail-section half">
+                <h3>📧 Emails Found</h3>
+                ${code.emails?.length > 0 ? `
+                    <ul class="simple-list">
+                        ${code.emails.map(email => `<li>${email}</li>`).join('')}
                     </ul>
-                </div>
+                ` : '<p class="no-items">None</p>'}
             </div>
-        ` : ''}
-
-        ${!scan.codeAnalysis.hardcodedSecrets?.length &&
-          !scan.codeAnalysis.insecureFunctions?.length &&
-          !scan.codeAnalysis.sqlInjection?.length &&
-          !scan.codeAnalysis.cryptoIssues?.length ? `
-            <div style="background: rgba(0,255,136,0.1); border: 1px solid #00ff88; padding: 1.5rem; border-radius: 10px; text-align: center;">
-                <p style="color: #00ff88; font-size: 1.2rem;">✅ No major code issues detected</p>
+            <div class="detail-section half">
+                <h3>🖥️ IP Addresses</h3>
+                ${code.ipAddresses?.length > 0 ? `
+                    <ul class="simple-list">
+                        ${code.ipAddresses.map(ip => `<li>${ip}</li>`).join('')}
+                    </ul>
+                ` : '<p class="no-items">None</p>'}
             </div>
-        ` : ''}
+        </div>
     `;
 }
 
 function renderNetworkTab(scan) {
-    if (!scan.networkSecurity) {
-        return `
-            <div class="no-data">
-                <p style="color: #888;">No network security data available</p>
-            </div>
-        `;
-    }
+    const net = scan.networkSecurity || {};
 
     return `
-        <div style="margin-bottom: 2rem;">
-            <h3 style="color: #fff; margin-bottom: 1rem;">🌐 Network Configuration</h3>
-            <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px;">
-                <div style="margin-bottom: 1rem;">
-                    <span style="color: #888;">Cleartext Traffic:</span>
-                    <strong style="color: ${scan.networkSecurity.clearTextTraffic ? '#ff4444' : '#00ff88'}; margin-left: 0.5rem;">
-                        ${scan.networkSecurity.clearTextTraffic ? '⚠️ Allowed (Insecure)' : '✅ Blocked'}
-                    </strong>
+        <div class="detail-section">
+            <h3>Network Security Configuration</h3>
+            <div class="network-grid">
+                <div class="network-item ${net.certificatePinning ? 'secure' : 'insecure'}">
+                    <span class="net-icon">${net.certificatePinning ? '✅' : '❌'}</span>
+                    <span class="net-label">Certificate Pinning</span>
+                    <span class="net-value">${net.certificatePinning ? 'Enabled' : 'Not Implemented'}</span>
                 </div>
-                <div>
-                    <span style="color: #888;">Certificate Pinning:</span>
-                    <strong style="color: ${scan.networkSecurity.certificatePinning ? '#00ff88' : '#ffaa00'}; margin-left: 0.5rem;">
-                        ${scan.networkSecurity.certificatePinning ? '✅ Enabled' : '⚠️ Not Implemented'}
-                    </strong>
+                <div class="network-item ${!net.cleartextPermitted ? 'secure' : 'insecure'}">
+                    <span class="net-icon">${!net.cleartextPermitted ? '✅' : '⚠️'}</span>
+                    <span class="net-label">Cleartext Traffic</span>
+                    <span class="net-value">${net.cleartextPermitted ? 'Allowed' : 'Blocked'}</span>
+                </div>
+                <div class="network-item secure">
+                    <span class="net-icon">🔒</span>
+                    <span class="net-label">TLS Version</span>
+                    <span class="net-value">${net.tlsVersion || 'Unknown'}</span>
                 </div>
             </div>
         </div>
 
-        ${scan.networkSecurity.domains && scan.networkSecurity.domains.length > 0 ? `
-            <div style="margin-bottom: 2rem;">
-                <h3 style="color: #fff; margin-bottom: 1rem;">📡 Domains Contacted (${scan.networkSecurity.domains.length})</h3>
-                <div style="max-height: 300px; overflow-y: auto; background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px;">
-                    ${scan.networkSecurity.domains.map(domain => {
-                        const isSuspicious = domain.includes('.tk') || domain.includes('.ml') || domain.includes('.ga') ||
-                                           domain.includes('.xyz') || domain.includes('malicious') || domain.includes('unknown');
-                        return `
-                            <div style="padding: 0.75rem; background: rgba(${isSuspicious ? '255,68,68' : '0,170,255'},0.1); border: 1px solid ${isSuspicious ? '#ff4444' : '#00aaff'}; border-radius: 6px; margin-bottom: 0.5rem; font-family: monospace;">
-                                <code style="color: ${isSuspicious ? '#ff4444' : '#00aaff'};">
-                                    ${isSuspicious ? '⚠️ ' : ''}${domain}
-                                </code>
-                                ${isSuspicious ? '<span style="color: #ff4444; margin-left: 1rem; font-size: 0.85rem;">(Suspicious)</span>' : ''}
-                            </div>
-                        `;
-                    }).join('')}
+        ${net.cleartextDomains?.length > 0 ? `
+            <div class="detail-section">
+                <h3>⚠️ Domains Allowing HTTP</h3>
+                <div class="domain-list warning">
+                    ${net.cleartextDomains.map(d => `<span class="domain-item">${d}</span>`).join('')}
                 </div>
+            </div>
+        ` : ''}
+
+        ${net.domainWhitelist?.length > 0 ? `
+            <div class="detail-section">
+                <h3>Whitelisted Domains</h3>
+                <div class="domain-list">
+                    ${net.domainWhitelist.map(d => `<span class="domain-item">${d}</span>`).join('')}
+                </div>
+            </div>
+        ` : ''}
+
+        ${net.trustAnchors?.length > 0 ? `
+            <div class="detail-section">
+                <h3>Trust Anchors</h3>
+                <ul class="simple-list">
+                    ${net.trustAnchors.map(t => `<li>${t}</li>`).join('')}
+                </ul>
             </div>
         ` : ''}
     `;
 }
 
-function renderCertificateTab(scan) {
-    if (!scan.certificateInfo) {
-        return `
-            <div class="no-data">
-                <p style="color: #888;">No certificate information available</p>
-            </div>
-        `;
-    }
-
-    const cert = scan.certificateInfo;
-    const isWeakAlgo = cert.signatureAlgorithm?.includes('MD5') || cert.signatureAlgorithm?.includes('SHA1');
-    const validUntil = new Date(cert.validUntil);
-    const now = new Date();
-    const daysUntilExpiry = Math.floor((validUntil - now) / (1000 * 60 * 60 * 24));
-    const isExpiringSoon = daysUntilExpiry < 90 && daysUntilExpiry > 0;
-    const isExpired = daysUntilExpiry < 0;
+function renderBinaryTab(scan) {
+    const binary = scan.binaryAnalysis || {};
+    const malware = scan.malwareAnalysis || {};
+    const manifest = scan.manifestAnalysis || {};
 
     return `
-        <div style="margin-bottom: 2rem;">
-            <h3 style="color: #fff; margin-bottom: 1rem;">📜 Certificate Details</h3>
-            <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 10px;">
-                <div style="margin-bottom: 1rem;">
-                    <p style="color: #888; margin-bottom: 0.25rem;">Subject</p>
-                    <p style="color: #fff; font-family: monospace; font-size: 0.9rem;">${cert.subject}</p>
+        <div class="detail-section">
+            <h3>Binary Protection Analysis</h3>
+            <div class="binary-grid">
+                ${renderBinaryItem('PIE', 'Position Independent Executable', binary.pie)}
+                ${renderBinaryItem('Stack Canary', 'Buffer overflow protection', binary.stackCanary)}
+                ${renderBinaryItem('NX Bit', 'No-execute memory protection', binary.nxBit)}
+                ${renderBinaryItem('RELRO', 'Relocation Read-Only', binary.relro)}
+                ${renderBinaryItem('FORTIFY', 'FORTIFY_SOURCE enabled', binary.fortify)}
+                ${renderBinaryItem('Symbols Stripped', 'Debug symbols removed', !binary.symbols)}
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <h3>Security Features</h3>
+            <div class="binary-grid">
+                ${renderBinaryItem('Root Detection', 'Detects rooted devices', binary.rootDetection)}
+                ${renderBinaryItem('Anti-Tampering', 'Prevents modification', binary.antiTampering)}
+                ${renderBinaryItem('Anti-Debug', 'Prevents debugging', malware.antiDebug)}
+                ${renderBinaryItem('Anti-VM', 'Detects emulators', malware.antiVM)}
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <h3>Code Protection</h3>
+            <div class="code-protection">
+                <div class="protection-item">
+                    <span class="protection-label">Obfuscation</span>
+                    <span class="protection-value ${binary.obfuscation && binary.obfuscation !== 'None' ? 'good' : 'bad'}">
+                        ${binary.obfuscation || 'None'}
+                    </span>
                 </div>
-                <div style="margin-bottom: 1rem;">
-                    <p style="color: #888; margin-bottom: 0.25rem;">Issuer</p>
-                    <p style="color: #fff; font-family: monospace; font-size: 0.9rem;">${cert.issuer}</p>
+                <div class="protection-item">
+                    <span class="protection-label">Packer</span>
+                    <span class="protection-value ${malware.packer === 'None' ? 'good' : 'warning'}">
+                        ${malware.packer || 'None'}
+                    </span>
                 </div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
-                    <div>
-                        <p style="color: #888; margin-bottom: 0.25rem;">Valid From</p>
-                        <p style="color: #fff;">${cert.validFrom}</p>
-                    </div>
-                    <div>
-                        <p style="color: #888; margin-bottom: 0.25rem;">Valid Until</p>
-                        <p style="color: ${isExpired ? '#ff4444' : isExpiringSoon ? '#ffaa00' : '#00ff88'};">
-                            ${cert.validUntil}
-                            ${isExpired ? ' ⚠️ EXPIRED' : isExpiringSoon ? ' ⚠️ Expiring Soon' : ''}
-                        </p>
-                    </div>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                    <div>
-                        <p style="color: #888; margin-bottom: 0.25rem;">Serial Number</p>
-                        <p style="color: #00aaff; font-family: monospace; font-size: 0.9rem;">${cert.serialNumber}</p>
-                    </div>
-                    <div>
-                        <p style="color: #888; margin-bottom: 0.25rem;">Signature Algorithm</p>
-                        <p style="color: ${isWeakAlgo ? '#ff4444' : '#00ff88'}; font-family: monospace; font-size: 0.9rem;">
-                            ${cert.signatureAlgorithm}
-                            ${isWeakAlgo ? ' ⚠️ Weak' : ''}
-                        </p>
-                    </div>
-                    <div>
-                        <p style="color: #888; margin-bottom: 0.25rem;">Version</p>
-                        <p style="color: #fff;">${cert.version}</p>
-                    </div>
+                <div class="protection-item">
+                    <span class="protection-label">Compiler</span>
+                    <span class="protection-value">${malware.compiler || 'Unknown'}</span>
                 </div>
             </div>
         </div>
 
-        ${isWeakAlgo || isExpired || isExpiringSoon ? `
-            <div style="background: rgba(255,68,68,0.1); border: 1px solid #ff4444; padding: 1rem; border-radius: 10px;">
-                <h4 style="color: #ff4444; margin: 0 0 0.5rem 0;">⚠️ Certificate Issues Detected</h4>
-                <ul style="color: #ccc; margin: 0; padding-left: 1.5rem;">
-                    ${isWeakAlgo ? '<li>Weak signature algorithm detected - vulnerable to attacks</li>' : ''}
-                    ${isExpired ? '<li>Certificate has expired - app may not be trusted</li>' : ''}
-                    ${isExpiringSoon ? `<li>Certificate expires in ${daysUntilExpiry} days</li>` : ''}
-                </ul>
+        <div class="detail-section">
+            <h3>Manifest Analysis</h3>
+            <div class="manifest-grid">
+                <div class="manifest-item ${!manifest.debuggable ? 'secure' : 'insecure'}">
+                    <span class="manifest-label">Debuggable</span>
+                    <span class="manifest-value">${manifest.debuggable ? 'Yes ⚠️' : 'No ✅'}</span>
+                </div>
+                <div class="manifest-item ${!manifest.allowBackup ? 'secure' : 'insecure'}">
+                    <span class="manifest-label">Allow Backup</span>
+                    <span class="manifest-value">${manifest.allowBackup ? 'Yes ⚠️' : 'No ✅'}</span>
+                </div>
+                <div class="manifest-item">
+                    <span class="manifest-label">Exported Activities</span>
+                    <span class="manifest-value">${manifest.exportedActivities || 0}</span>
+                </div>
+                <div class="manifest-item">
+                    <span class="manifest-label">Exported Services</span>
+                    <span class="manifest-value">${manifest.exportedServices || 0}</span>
+                </div>
+                <div class="manifest-item">
+                    <span class="manifest-label">Exported Receivers</span>
+                    <span class="manifest-value">${manifest.exportedReceivers || 0}</span>
+                </div>
+                <div class="manifest-item">
+                    <span class="manifest-label">Exported Providers</span>
+                    <span class="manifest-value">${manifest.exportedProviders || 0}</span>
+                </div>
             </div>
-        ` : ''}
+        </div>
+    `;
+}
+
+function renderCertificateTab(scan) {
+    const cert = scan.certificateInfo || {};
+
+    return `
+        <div class="detail-section">
+            <h3>Certificate Information</h3>
+            <div class="cert-grid">
+                <div class="cert-item">
+                    <span class="cert-label">Issuer</span>
+                    <span class="cert-value">${cert.issuer || 'Unknown'}</span>
+                </div>
+                <div class="cert-item">
+                    <span class="cert-label">Subject</span>
+                    <span class="cert-value">${cert.subject || 'Unknown'}</span>
+                </div>
+                <div class="cert-item">
+                    <span class="cert-label">Valid From</span>
+                    <span class="cert-value">${cert.validFrom || 'Unknown'}</span>
+                </div>
+                <div class="cert-item">
+                    <span class="cert-label">Valid Until</span>
+                    <span class="cert-value">${cert.validTo || 'Unknown'}</span>
+                </div>
+                <div class="cert-item">
+                    <span class="cert-label">Algorithm</span>
+                    <span class="cert-value">${cert.signatureAlgorithm || 'Unknown'}</span>
+                </div>
+                <div class="cert-item">
+                    <span class="cert-label">Serial Number</span>
+                    <span class="cert-value">${cert.serialNumber || 'Unknown'}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <h3>Fingerprints</h3>
+            <div class="fingerprint-list">
+                <div class="fingerprint-item">
+                    <span class="fp-label">SHA1</span>
+                    <code class="fp-value">${cert.sha1Fingerprint || 'N/A'}</code>
+                </div>
+                <div class="fingerprint-item">
+                    <span class="fp-label">SHA256</span>
+                    <code class="fp-value">${cert.sha256Fingerprint || 'N/A'}</code>
+                </div>
+            </div>
+        </div>
+
+        ${cert.warnings?.length > 0 ? `
+            <div class="detail-section">
+                <h3>⚠️ Certificate Warnings</h3>
+                <div class="cert-warnings">
+                    ${cert.warnings.map(w => `
+                        <div class="warning-item">
+                            <span class="warning-icon">⚠️</span>
+                            <span class="warning-text">${w}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : `
+            <div class="detail-section">
+                <div class="no-warnings">
+                    <span class="no-warnings-icon">✅</span>
+                    <span>No certificate warnings</span>
+                </div>
+            </div>
+        `}
+    `;
+}
+
+// Helper functions
+function renderChecklistItem(label, value) {
+    return `
+        <div class="checklist-item ${value ? 'pass' : 'fail'}">
+            <span class="check-icon">${value ? '✅' : '❌'}</span>
+            <span class="check-label">${label}</span>
+        </div>
+    `;
+}
+
+function renderBinaryItem(name, description, value) {
+    const isGood = value === true || value === 'Full';
+    return `
+        <div class="binary-item ${isGood ? 'secure' : 'insecure'}">
+            <span class="binary-icon">${isGood ? '✅' : '❌'}</span>
+            <div class="binary-info">
+                <span class="binary-name">${name}</span>
+                <span class="binary-desc">${description}</span>
+            </div>
+            <span class="binary-value">${typeof value === 'boolean' ? (value ? 'Yes' : 'No') : (value || 'No')}</span>
+        </div>
     `;
 }
 

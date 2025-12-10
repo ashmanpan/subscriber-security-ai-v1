@@ -915,6 +915,698 @@ tbody td {
 }
 
 /* Responsive Design */
+/* =============================================== */
+/* FRAUD DETECTION & SECURITY ALERTS STYLES       */
+/* =============================================== */
+
+/* Security Alerts Section */
+.alert-section {
+    border-color: #ff4444;
+}
+
+.alert-section .section-header h2 {
+    color: #ff4444;
+}
+
+.alert-count {
+    background: #ff4444;
+    color: #fff;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.alerts-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.no-alerts {
+    text-align: center;
+    padding: 2rem;
+    color: #00ff88;
+}
+
+.no-alerts-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 1rem;
+}
+
+.security-alert-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    border-left: 4px solid #ff4444;
+    transition: all 0.3s ease;
+}
+
+.security-alert-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.security-alert-item.severity-high {
+    border-left-color: #ff4444;
+    background: rgba(255, 68, 68, 0.1);
+}
+
+.security-alert-item.severity-medium {
+    border-left-color: #ffaa00;
+    background: rgba(255, 170, 0, 0.1);
+}
+
+.security-alert-item.severity-low {
+    border-left-color: #00ff88;
+    background: rgba(0, 255, 136, 0.1);
+}
+
+.alert-icon {
+    font-size: 2rem;
+}
+
+.alert-details {
+    flex: 1;
+}
+
+.alert-type {
+    color: #fff;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.alert-description {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.alert-meta {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.alert-time,
+.alert-child {
+    color: #888;
+    font-size: 0.8rem;
+}
+
+.alert-severity {
+    padding: 0.15rem 0.5rem;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.alert-severity.high {
+    background: rgba(255, 68, 68, 0.2);
+    color: #ff4444;
+}
+
+.alert-severity.medium {
+    background: rgba(255, 170, 0, 0.2);
+    color: #ffaa00;
+}
+
+.alert-severity.low {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+}
+
+/* Fraud Protection Section */
+.fraud-section {
+    border-color: #9933ff;
+}
+
+.fraud-section .section-header h2 {
+    color: #9933ff;
+}
+
+.fraud-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.fraud-stat-card {
+    background: linear-gradient(135deg, #1a1a1a 0%, #222 100%);
+    border: 2px solid #333;
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+}
+
+.fraud-stat-card:hover {
+    transform: translateY(-3px);
+}
+
+.fraud-stat-card.scam {
+    border-color: #ff4444;
+}
+
+.fraud-stat-card.scam:hover {
+    box-shadow: 0 8px 25px rgba(255, 68, 68, 0.3);
+}
+
+.fraud-stat-card.investment {
+    border-color: #ffaa00;
+}
+
+.fraud-stat-card.investment:hover {
+    box-shadow: 0 8px 25px rgba(255, 170, 0, 0.3);
+}
+
+.fraud-stat-card.loan {
+    border-color: #ff6b35;
+}
+
+.fraud-stat-card.loan:hover {
+    box-shadow: 0 8px 25px rgba(255, 107, 53, 0.3);
+}
+
+.fraud-stat-card.upi {
+    border-color: #00aaff;
+}
+
+.fraud-stat-card.upi:hover {
+    box-shadow: 0 8px 25px rgba(0, 170, 255, 0.3);
+}
+
+.fraud-stat-card.betting {
+    border-color: #9933ff;
+}
+
+.fraud-stat-card.betting:hover {
+    box-shadow: 0 8px 25px rgba(153, 51, 255, 0.3);
+}
+
+.fraud-stat-card.data-theft {
+    border-color: #ff3366;
+}
+
+.fraud-stat-card.data-theft:hover {
+    box-shadow: 0 8px 25px rgba(255, 51, 102, 0.3);
+}
+
+.fraud-icon {
+    font-size: 2.5rem;
+}
+
+.fraud-info h3 {
+    font-size: 1.75rem;
+    color: #fff;
+    margin-bottom: 0.25rem;
+}
+
+.fraud-info p {
+    color: #888;
+    font-size: 0.8rem;
+}
+
+/* Fraud Incidents List */
+.fraud-incidents-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.no-incidents {
+    text-align: center;
+    padding: 2rem;
+    color: #00ff88;
+}
+
+.no-incidents span {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 1rem;
+}
+
+.fraud-incident-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    border-left: 4px solid #9933ff;
+    transition: all 0.3s ease;
+}
+
+.fraud-incident-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.fraud-incident-item.type-digital-arrest {
+    border-left-color: #ff4444;
+}
+
+.fraud-incident-item.type-investment {
+    border-left-color: #ffaa00;
+}
+
+.fraud-incident-item.type-loan-app {
+    border-left-color: #ff6b35;
+}
+
+.fraud-incident-item.type-upi {
+    border-left-color: #00aaff;
+}
+
+.fraud-incident-item.type-betting {
+    border-left-color: #9933ff;
+}
+
+.fraud-incident-item.type-data-theft {
+    border-left-color: #ff3366;
+}
+
+.incident-icon {
+    font-size: 2rem;
+}
+
+.incident-details {
+    flex: 1;
+}
+
+.incident-type {
+    color: #fff;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.incident-description {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.incident-meta {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.incident-time,
+.incident-child,
+.incident-status {
+    color: #888;
+    font-size: 0.8rem;
+}
+
+.incident-status.blocked {
+    color: #00ff88;
+}
+
+.incident-status.warning {
+    color: #ffaa00;
+}
+
+/* Firewall Rules List */
+.firewall-rules-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.no-rules {
+    text-align: center;
+    padding: 2rem;
+    color: #888;
+}
+
+.no-rules span {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 1rem;
+}
+
+.rules-count {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.firewall-rule-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    border: 1px solid #333;
+    transition: all 0.3s ease;
+}
+
+.firewall-rule-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: #00ff88;
+}
+
+.rule-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.rule-icon {
+    font-size: 1.5rem;
+}
+
+.rule-details {
+    flex: 1;
+}
+
+.rule-name {
+    color: #fff;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.rule-target {
+    color: #888;
+    font-size: 0.85rem;
+}
+
+.rule-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.rule-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.rule-status.active {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    border: 1px solid #00ff88;
+}
+
+.rule-status.pending {
+    background: rgba(255, 170, 0, 0.2);
+    color: #ffaa00;
+    border: 1px solid #ffaa00;
+}
+
+.rule-status.disabled {
+    background: rgba(136, 136, 136, 0.2);
+    color: #888;
+    border: 1px solid #888;
+}
+
+.rule-action {
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.rule-action.block {
+    background: rgba(255, 68, 68, 0.2);
+    color: #ff4444;
+}
+
+.rule-action.allow {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+}
+
+.rule-action.monitor {
+    background: rgba(0, 170, 255, 0.2);
+    color: #00aaff;
+}
+
+/* Fraud Details Modal */
+.modal-large {
+    max-width: 1100px;
+}
+
+.fraud-details-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    border-bottom: 1px solid #333;
+    padding-bottom: 1rem;
+}
+
+.fraud-tab {
+    padding: 0.75rem 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid #333;
+    border-radius: 20px;
+    color: #aaa;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.fraud-tab:hover {
+    border-color: #9933ff;
+    color: #9933ff;
+}
+
+.fraud-tab.active {
+    background: #9933ff;
+    color: #fff;
+    border-color: #9933ff;
+}
+
+.fraud-tab-content {
+    display: none;
+}
+
+.fraud-tab-content.active {
+    display: block;
+}
+
+.fraud-summary {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.fraud-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.fraud-summary h3 {
+    color: #fff;
+    font-size: 1.25rem;
+}
+
+.fraud-summary-stats {
+    display: flex;
+    gap: 2rem;
+}
+
+.fraud-stat {
+    text-align: center;
+}
+
+.fraud-stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.fraud-stat-label {
+    color: #888;
+    font-size: 0.8rem;
+}
+
+.fraud-description {
+    color: #aaa;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.fraud-description h4 {
+    color: #fff;
+    margin-bottom: 0.75rem;
+}
+
+.fraud-description ul {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.fraud-description li {
+    margin-bottom: 0.5rem;
+}
+
+.fraud-incidents-section {
+    margin-top: 1.5rem;
+}
+
+.fraud-incidents-section h4 {
+    color: #fff;
+    margin-bottom: 1rem;
+}
+
+.fraud-incident-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid #333;
+}
+
+.fraud-incident-card:hover {
+    border-color: #9933ff;
+}
+
+.incident-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.incident-title {
+    color: #fff;
+    font-weight: 600;
+}
+
+.incident-badge {
+    padding: 0.15rem 0.5rem;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.incident-badge.blocked {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+}
+
+.incident-badge.detected {
+    background: rgba(255, 170, 0, 0.2);
+    color: #ffaa00;
+}
+
+.incident-badge.investigating {
+    background: rgba(0, 170, 255, 0.2);
+    color: #00aaff;
+}
+
+.incident-content {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.incident-footer {
+    display: flex;
+    gap: 1rem;
+    color: #666;
+    font-size: 0.8rem;
+}
+
+/* Data Theft Specific Styles */
+.data-theft-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.data-theft-stat {
+    background: rgba(255, 51, 102, 0.1);
+    border: 1px solid #ff3366;
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.data-theft-stat h4 {
+    color: #ff3366;
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.data-theft-stat p {
+    color: #888;
+    font-size: 0.8rem;
+}
+
+/* Responsive Design for Fraud Components */
+@media (max-width: 768px) {
+    .fraud-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .fraud-details-tabs {
+        justify-content: center;
+    }
+
+    .fraud-tab {
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
+    }
+
+    .fraud-summary-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .fraud-summary-stats {
+        justify-content: center;
+    }
+
+    .firewall-rule-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .rule-meta {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+    .fraud-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .alert-meta,
+    .incident-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+/* =============================================== */
+/* END FRAUD DETECTION STYLES                     */
+/* =============================================== */
+
+/* Responsive Design */
 @media (max-width: 768px) {
     .nav-menu {
         gap: 1rem;

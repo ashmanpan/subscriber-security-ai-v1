@@ -102,6 +102,99 @@
             </div>
         </div>
 
+        <!-- Fraud & Security Alerts -->
+        <div class="section-card alert-section">
+            <div class="section-header">
+                <h2>🚨 Security Alerts</h2>
+                <span class="alert-count" id="alertCount">0</span>
+            </div>
+            <div id="securityAlerts" class="alerts-container">
+                <div class="no-alerts">
+                    <span class="no-alerts-icon">✅</span>
+                    <p>No active security alerts</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fraud Detection Section -->
+        <div class="section-card fraud-section">
+            <div class="section-header">
+                <h2>🛡️ Fraud Protection</h2>
+                <button class="btn-small" onclick="showFraudDetails()">View All</button>
+            </div>
+            <div class="fraud-stats-grid">
+                <div class="fraud-stat-card scam">
+                    <div class="fraud-icon">🚫</div>
+                    <div class="fraud-info">
+                        <h3 id="digitalArrestBlocks">0</h3>
+                        <p>Digital Arrest Scams</p>
+                    </div>
+                </div>
+                <div class="fraud-stat-card investment">
+                    <div class="fraud-icon">📉</div>
+                    <div class="fraud-info">
+                        <h3 id="investmentScamBlocks">0</h3>
+                        <p>Investment Scams</p>
+                    </div>
+                </div>
+                <div class="fraud-stat-card loan">
+                    <div class="fraud-icon">💳</div>
+                    <div class="fraud-info">
+                        <h3 id="loanAppBlocks">0</h3>
+                        <p>Loan App Scams</p>
+                    </div>
+                </div>
+                <div class="fraud-stat-card upi">
+                    <div class="fraud-icon">📱</div>
+                    <div class="fraud-info">
+                        <h3 id="upiFraudBlocks">0</h3>
+                        <p>UPI Fraud Attempts</p>
+                    </div>
+                </div>
+                <div class="fraud-stat-card betting">
+                    <div class="fraud-icon">🎰</div>
+                    <div class="fraud-info">
+                        <h3 id="bettingBlocks">0</h3>
+                        <p>Betting Sites Blocked</p>
+                    </div>
+                </div>
+                <div class="fraud-stat-card data-theft">
+                    <div class="fraud-icon">🔓</div>
+                    <div class="fraud-info">
+                        <h3 id="dataTheftAlerts">0</h3>
+                        <p>Data Theft Alerts</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Fraud Incidents -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2>⚠️ Recent Fraud Incidents</h2>
+            </div>
+            <div id="recentFraudIncidents" class="fraud-incidents-list">
+                <div class="no-incidents">
+                    <span>✅</span>
+                    <p>No fraud incidents detected</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Firewall Rules -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2>🔥 Active Firewall Rules</h2>
+                <span class="rules-count" id="rulesCount">0 rules</span>
+            </div>
+            <div id="activeFirewallRules" class="firewall-rules-list">
+                <div class="no-rules">
+                    <span>🛡️</span>
+                    <p>No active blocking rules</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Children Quick Access -->
         <div class="section-card">
             <div class="section-header">
@@ -114,6 +207,19 @@
                     <p>No children added yet</p>
                     <button class="btn-small" onclick="window.location.href='children.html'">Add Child</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fraud Details Modal -->
+    <div id="fraudModal" class="modal" onclick="closeFraudModal(event)">
+        <div class="modal-content modal-large" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>🛡️ Fraud Protection Details</h2>
+                <button class="modal-close" onclick="closeFraudModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="fraudModalBody">
+                <!-- Fraud details will be loaded here -->
             </div>
         </div>
     </div>
