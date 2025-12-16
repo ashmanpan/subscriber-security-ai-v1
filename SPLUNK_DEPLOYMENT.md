@@ -57,11 +57,58 @@ tail -f /opt/splunk/var/log/splunk/splunkd.log
 
 | Port | Protocol | Purpose | Source |
 |------|----------|---------|--------|
-| 22 | TCP | SSH Access | 0.0.0.0/0 |
-| 8000 | TCP | Splunk Web UI | 0.0.0.0/0 |
-| 8088 | TCP | HTTP Event Collector (HEC) | 0.0.0.0/0 |
+| 22 | TCP | SSH Access | 10.0.0.0/16 (VPC only) |
+| 8000 | TCP | Splunk Web UI | 10.0.0.0/16 (VPC only) |
+| 8088 | TCP | HTTP Event Collector (HEC) | 10.0.0.0/16 (VPC only) |
 | 8089 | TCP | REST API | 10.0.0.0/16 (VPC only) |
 | 9997 | TCP | Splunk Forwarder | 10.0.0.0/16 (VPC only) |
+
+### Applying Security Group Rules
+
+```bash
+# Remove insecure 0.0.0.0/0 rules
+aws ec2 revoke-security-group-ingress \
+  --group-id sg-0af70dbcaa331bf40 \
+  --protocol tcp --port 22 --cidr 0.0.0.0/0 \
+  --region ap-south-1
+
+aws ec2 revoke-security-group-ingress \
+  --group-id sg-0af70dbcaa331bf40 \
+  --protocol tcp --port 8000 --cidr 0.0.0.0/0 \
+  --region ap-south-1
+
+aws ec2 revoke-security-group-ingress \
+  --group-id sg-0af70dbcaa331bf40 \
+  --protocol tcp --port 8088 --cidr 0.0.0.0/0 \
+  --region ap-south-1
+
+# Add VPC-only rules
+aws ec2 authorize-security-group-ingress \
+  --group-id sg-0af70dbcaa331bf40 \
+  --protocol tcp --port 22 --cidr 10.0.0.0/16 \
+  --region ap-south-1
+
+aws ec2 authorize-security-group-ingress \
+  --group-id sg-0af70dbcaa331bf40 \
+  --protocol tcp --port 8000 --cidr 10.0.0.0/16 \
+  --region ap-south-1
+
+aws ec2 authorize-security-group-ingress \
+  --group-id sg-0af70dbcaa331bf40 \
+  --protocol tcp --port 8088 --cidr 10.0.0.0/16 \
+  --region ap-south-1
+```
+
+### Access via Jump Host / Bastion
+
+Since Splunk is now VPC-only, access via SSH tunnel through a bastion host:
+
+```bash
+# SSH tunnel for Splunk Web UI (port 8000)
+ssh -i keys/pc-prod-jumphost-key.pem -L 8000:10.0.101.28:8000 ubuntu@<BASTION_IP>
+
+# Then access Splunk at: http://localhost:8000
+```
 
 ## 📦 Installed Components
 
