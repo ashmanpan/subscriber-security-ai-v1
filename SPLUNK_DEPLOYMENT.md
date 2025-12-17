@@ -210,15 +210,5 @@ curl -k -u admin:ParentalControl@2024 \
 
 ---
 
-## 🗄️ Old Instance (TO BE TERMINATED)
-
-| Property | Value |
-|----------|-------|
-| Instance ID | i-094065076a0313703 |
-| Status | Running (to be terminated after verification) |
-| Issue | In private subnet, SSH key lost |
-
----
-
-**Last Updated**: December 11, 2025
+**Last Updated**: December 17, 2025
 **Status**: ✅ ACTIVE - Splunk with MLTK is fully operational
