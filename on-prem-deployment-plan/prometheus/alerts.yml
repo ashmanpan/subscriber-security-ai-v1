@@ -1,0 +1,142 @@
+# =============================================================================
+# Prometheus Alert Rules for Subscriber Security AI
+# =============================================================================
+
+groups:
+  - name: infrastructure
+    rules:
+      # Container down
+      - alert: ContainerDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Container {{ $labels.job }} is down"
+          description: "Container {{ $labels.job }} has been down for more than 1 minute."
+
+      # High CPU usage
+      - alert: HighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.container_name }}"
+          description: "Container {{ $labels.container_name }} CPU usage is above 80%."
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: container_memory_usage_bytes / container_spec_memory_limit_bytes > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.container_name }}"
+          description: "Container {{ $labels.container_name }} memory usage is above 80%."
+
+      # Disk space low
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) < 0.15
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Disk space is below 15% on {{ $labels.instance }}."
+
+  - name: database
+    rules:
+      # MongoDB replica set unhealthy
+      - alert: MongoDBReplicaSetUnhealthy
+        expr: mongodb_replset_member_health == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MongoDB replica set member unhealthy"
+          description: "MongoDB replica set member {{ $labels.member }} is unhealthy."
+
+      # Kafka broker down
+      - alert: KafkaBrokerDown
+        expr: kafka_brokers < 3
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kafka broker down"
+          description: "Less than 3 Kafka brokers are running."
+
+      # Kafka consumer lag high
+      - alert: KafkaConsumerLagHigh
+        expr: kafka_consumer_group_lag > 10000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kafka consumer lag is high"
+          description: "Consumer group {{ $labels.consumer_group }} lag is above 10000."
+
+  - name: application
+    rules:
+      # P-Gateway high latency
+      - alert: PGatewayHighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="p-gateway"}[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "P-Gateway high latency"
+          description: "P-Gateway 95th percentile latency is above 1 second."
+
+      # FTD Integration errors
+      - alert: FTDIntegrationErrors
+        expr: rate(http_requests_total{job="ftd-integration", status=~"5.."}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "FTD Integration errors"
+          description: "FTD Integration is returning 5xx errors."
+
+      # MobSF scan failures
+      - alert: MobSFScanFailures
+        expr: rate(mobsf_scan_failures_total[5m]) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MobSF scan failures"
+          description: "MobSF is experiencing high scan failure rate."
+
+  - name: security
+    rules:
+      # High anomaly detection rate
+      - alert: HighAnomalyRate
+        expr: rate(anomalies_detected_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High anomaly detection rate"
+          description: "More than 10 anomalies detected per minute in the last 5 minutes."
+
+      # Blocked traffic spike
+      - alert: BlockedTrafficSpike
+        expr: rate(blocked_requests_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Blocked traffic spike"
+          description: "More than 100 requests blocked per minute."
+
+      # Fraud detection alert
+      - alert: FraudDetected
+        expr: increase(fraud_detections_total[5m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Fraud detected"
+          description: "New fraud detection: {{ $labels.fraud_type }}."

@@ -1,0 +1,545 @@
+version: '3.8'
+
+# =============================================================================
+# SUBSCRIBER SECURITY AI - ON-PREMISES DEPLOYMENT
+# =============================================================================
+#
+# Usage:
+#   docker-compose up -d          # Start all services
+#   docker-compose ps             # Check status
+#   docker-compose logs -f        # View logs
+#   docker-compose down           # Stop all services
+#
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # LOAD BALANCER / REVERSE PROXY
+  # ===========================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: subsec-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ../:/usr/share/nginx/html/app:ro
+    depends_on:
+      - p-gateway
+      - ftd-integration
+      - mobsf-server
+      - analytics-dashboard
+    networks:
+      - frontend
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===========================================================================
+  # MICROSERVICES (FROM ECR)
+  # ===========================================================================
+  p-gateway:
+    image: ${ECR_REGISTRY}/parental-control:p-gateway-simulator
+    container_name: subsec-p-gateway
+    environment:
+      - NODE_ENV=production
+      - KAFKA_BROKERS=kafka1:9092,kafka2:9092,kafka3:9092
+      - MONGODB_URI=mongodb://mongodb1:27017,mongodb2:27017,mongodb3:27017/subsec?replicaSet=rs0
+      - FTD_API_URL=http://ftd-integration:5000
+      - LOG_LEVEL=info
+    ports:
+      - "8080:8080"
+    depends_on:
+      - kafka1
+      - mongodb1
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  ftd-integration:
+    image: ${ECR_REGISTRY}/parental-control:ftd-integration
+    container_name: subsec-ftd-integration
+    environment:
+      - NODE_ENV=production
+      - FTD_HOST=${FTD_HOST}
+      - FTD_USERNAME=${FTD_USERNAME}
+      - FTD_PASSWORD=${FTD_PASSWORD}
+      - FTD_DOMAIN_UUID=${FTD_DOMAIN_UUID}
+      - MONGODB_URI=mongodb://mongodb1:27017,mongodb2:27017,mongodb3:27017/subsec?replicaSet=rs0
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=${VAULT_TOKEN}
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb1
+      - vault
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  analytics-dashboard:
+    image: ${ECR_REGISTRY}/parental-control:analytics-dashboard
+    container_name: subsec-analytics-dashboard
+    environment:
+      - NODE_ENV=production
+      - SPLUNK_HOST=splunk
+      - SPLUNK_PORT=8089
+      - SPLUNK_TOKEN=${SPLUNK_TOKEN}
+      - MONGODB_URI=mongodb://mongodb1:27017,mongodb2:27017,mongodb3:27017/subsec?replicaSet=rs0
+    ports:
+      - "7000:7000"
+    depends_on:
+      - mongodb1
+      - splunk
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  policy-enforcer:
+    image: ${ECR_REGISTRY}/parental-control:policy-enforcer
+    container_name: subsec-policy-enforcer
+    environment:
+      - NODE_ENV=production
+      - KAFKA_BROKERS=kafka1:9092,kafka2:9092,kafka3:9092
+      - MONGODB_URI=mongodb://mongodb1:27017,mongodb2:27017,mongodb3:27017/subsec?replicaSet=rs0
+      - FTD_API_URL=http://ftd-integration:5000
+    depends_on:
+      - kafka1
+      - mongodb1
+      - ftd-integration
+    networks:
+      - backend
+    restart: unless-stopped
+
+  kafka-subscriber:
+    image: ${ECR_REGISTRY}/parental-control:kafka-subscriber
+    container_name: subsec-kafka-subscriber
+    environment:
+      - NODE_ENV=production
+      - KAFKA_BROKERS=kafka1:9092,kafka2:9092,kafka3:9092
+      - MONGODB_URI=mongodb://mongodb1:27017,mongodb2:27017,mongodb3:27017/subsec?replicaSet=rs0
+      - SPLUNK_HEC_URL=http://splunk:8088
+      - SPLUNK_HEC_TOKEN=${SPLUNK_HEC_TOKEN}
+    depends_on:
+      - kafka1
+      - mongodb1
+      - splunk
+    networks:
+      - backend
+    restart: unless-stopped
+
+  # ===========================================================================
+  # MOBSF (FROM DOCKER HUB)
+  # ===========================================================================
+  mobsf-server:
+    image: opensecurity/mobile-security-framework-mobsf:latest
+    container_name: subsec-mobsf
+    environment:
+      - MOBSF_API_KEY=${MOBSF_API_KEY}
+    ports:
+      - "6000:8000"
+    volumes:
+      - mobsf-data:/home/mobsf/.MobSF
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+  # ===========================================================================
+  # SERVERLESS FUNCTIONS (NODE.JS SERVICES)
+  # ===========================================================================
+  anomaly-detector:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.anomaly-detector
+    image: subsec/anomaly-detector:latest
+    container_name: subsec-anomaly-detector
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongodb1:27017,mongodb2:27017,mongodb3:27017/subsec?replicaSet=rs0
+      - KAFKA_BROKERS=kafka1:9092,kafka2:9092,kafka3:9092
+    depends_on:
+      - kafka1
+      - mongodb1
+    networks:
+      - backend
+    restart: unless-stopped
+
+  auto-blocker:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.auto-blocker
+    image: subsec/auto-blocker:latest
+    container_name: subsec-auto-blocker
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongodb1:27017,mongodb2:27017,mongodb3:27017/subsec?replicaSet=rs0
+      - FTD_API_URL=http://ftd-integration:5000
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    depends_on:
+      - mongodb1
+      - ftd-integration
+      - rabbitmq
+    networks:
+      - backend
+    restart: unless-stopped
+
+  domain-blocker:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.domain-blocker
+    image: subsec/domain-blocker:latest
+    container_name: subsec-domain-blocker
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongodb1:27017,mongodb2:27017,mongodb3:27017/subsec?replicaSet=rs0
+      - FTD_API_URL=http://ftd-integration:5000
+    depends_on:
+      - mongodb1
+      - ftd-integration
+    networks:
+      - backend
+    restart: unless-stopped
+
+  # ===========================================================================
+  # MESSAGE QUEUE - KAFKA CLUSTER
+  # ===========================================================================
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: subsec-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
+    networks:
+      - backend
+    restart: unless-stopped
+
+  kafka1:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: subsec-kafka1
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 300000
+    volumes:
+      - kafka1-data:/var/lib/kafka/data
+    networks:
+      - backend
+    restart: unless-stopped
+
+  kafka2:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: subsec-kafka2
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+    volumes:
+      - kafka2-data:/var/lib/kafka/data
+    networks:
+      - backend
+    restart: unless-stopped
+
+  kafka3:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: subsec-kafka3
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka3:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+    volumes:
+      - kafka3-data:/var/lib/kafka/data
+    networks:
+      - backend
+    restart: unless-stopped
+
+  # ===========================================================================
+  # MESSAGE QUEUE - RABBITMQ (FOR NOTIFICATIONS)
+  # ===========================================================================
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: subsec-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===========================================================================
+  # DATABASE - MONGODB REPLICA SET
+  # ===========================================================================
+  mongodb1:
+    image: mongo:6.0
+    container_name: subsec-mongodb1
+    command: mongod --replSet rs0 --bind_ip_all --keyFile /etc/mongo-keyfile
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
+    volumes:
+      - mongodb1-data:/data/db
+      - ./scripts/mongo-keyfile:/etc/mongo-keyfile:ro
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  mongodb2:
+    image: mongo:6.0
+    container_name: subsec-mongodb2
+    command: mongod --replSet rs0 --bind_ip_all --keyFile /etc/mongo-keyfile
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
+    volumes:
+      - mongodb2-data:/data/db
+      - ./scripts/mongo-keyfile:/etc/mongo-keyfile:ro
+    networks:
+      - backend
+    restart: unless-stopped
+
+  mongodb3:
+    image: mongo:6.0
+    container_name: subsec-mongodb3
+    command: mongod --replSet rs0 --bind_ip_all --keyFile /etc/mongo-keyfile
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
+    volumes:
+      - mongodb3-data:/data/db
+      - ./scripts/mongo-keyfile:/etc/mongo-keyfile:ro
+    networks:
+      - backend
+    restart: unless-stopped
+
+  # ===========================================================================
+  # OBJECT STORAGE - MINIO (S3 COMPATIBLE)
+  # ===========================================================================
+  minio:
+    image: minio/minio:latest
+    container_name: subsec-minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio-data:/data
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===========================================================================
+  # SECRETS MANAGEMENT - HASHICORP VAULT
+  # ===========================================================================
+  vault:
+    image: hashicorp/vault:latest
+    container_name: subsec-vault
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_TOKEN}
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - vault-data:/vault/data
+    networks:
+      - backend
+    restart: unless-stopped
+
+  # ===========================================================================
+  # ANALYTICS - SPLUNK ENTERPRISE
+  # ===========================================================================
+  splunk:
+    image: splunk/splunk:latest
+    container_name: subsec-splunk
+    ports:
+      - "8000:8000"   # Web UI
+      - "8088:8088"   # HEC
+      - "8089:8089"   # Management API
+      - "9997:9997"   # Forwarder receiving
+    environment:
+      SPLUNK_START_ARGS: --accept-license
+      SPLUNK_PASSWORD: ${SPLUNK_PASSWORD}
+      SPLUNK_HEC_TOKEN: ${SPLUNK_HEC_TOKEN}
+      SPLUNK_APPS_URL: https://splunkbase.splunk.com/app/2882/release/5.3.3/download
+    volumes:
+      - splunk-data:/opt/splunk/var
+      - splunk-etc:/opt/splunk/etc
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+  # ===========================================================================
+  # MONITORING - PROMETHEUS
+  # ===========================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: subsec-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    networks:
+      - backend
+    restart: unless-stopped
+
+  # ===========================================================================
+  # MONITORING - GRAFANA
+  # ===========================================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: subsec-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s:%(http_port)s/grafana/"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - backend
+    restart: unless-stopped
+
+  # ===========================================================================
+  # ALERTING - ALERTMANAGER
+  # ===========================================================================
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: subsec-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    networks:
+      - backend
+    restart: unless-stopped
+
+# =============================================================================
+# NETWORKS
+# =============================================================================
+networks:
+  frontend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+  backend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
+
+# =============================================================================
+# VOLUMES
+# =============================================================================
+volumes:
+  # Database
+  mongodb1-data:
+  mongodb2-data:
+  mongodb3-data:
+
+  # Message Queue
+  zookeeper-data:
+  zookeeper-logs:
+  kafka1-data:
+  kafka2-data:
+  kafka3-data:
+  rabbitmq-data:
+
+  # Storage
+  minio-data:
+  mobsf-data:
+
+  # Analytics
+  splunk-data:
+  splunk-etc:
+  prometheus-data:
+  grafana-data:
+  alertmanager-data:
+
+  # Secrets
+  vault-data:
